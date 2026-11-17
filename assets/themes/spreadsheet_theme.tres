@@ -254,6 +254,33 @@ border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.114, 0.141, 0.122, 1)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fatigue_panel"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.784, 0.808, 0.773, 1)
+border_width_top = 1
+border_color = Color(0.114, 0.141, 0.122, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fatigue_bg"]
+content_margin_left = 1.0
+content_margin_top = 1.0
+content_margin_right = 1.0
+content_margin_bottom = 1.0
+bg_color = Color(0.361, 0.42, 0.373, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.114, 0.141, 0.122, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fatigue_fill"]
+bg_color = Color(0.722, 0.478, 0.161, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fatigue_fill_critical"]
+bg_color = Color(0.659, 0.161, 0.098, 1)
+
 [resource]
 default_font = ExtResource("1_font")
 default_font_size = 14
@@ -280,6 +307,21 @@ CounterLabel/font_sizes/font_size = 24
 CounterLabel/fonts/font = ExtResource("2_font_bold")
 CounterPanel/base_type = &"PanelContainer"
 CounterPanel/styles/panel = SubResource("StyleBoxFlat_counter")
+FatigueBar/base_type = &"ProgressBar"
+FatigueBar/styles/background = SubResource("StyleBoxFlat_fatigue_bg")
+FatigueBar/styles/fill = SubResource("StyleBoxFlat_fatigue_fill")
+FatigueBarCritical/base_type = &"ProgressBar"
+FatigueBarCritical/styles/background = SubResource("StyleBoxFlat_fatigue_bg")
+FatigueBarCritical/styles/fill = SubResource("StyleBoxFlat_fatigue_fill_critical")
+FatigueCaption/base_type = &"Label"
+FatigueCaption/colors/font_color = Color(0.08, 0.18, 0.1, 1)
+FatigueCaption/font_sizes/font_size = 12
+FatigueCaption/fonts/font = ExtResource("2_font_bold")
+FatigueLabel/base_type = &"Label"
+FatigueLabel/colors/font_color = Color(0.09, 0.2, 0.11, 1)
+FatigueLabel/font_sizes/font_size = 12
+FatiguePanel/base_type = &"PanelContainer"
+FatiguePanel/styles/panel = SubResource("StyleBoxFlat_fatigue_panel")
 FormulaLabel/base_type = &"Label"
 FormulaLabel/colors/font_color = Color(0.15, 0.36, 0.2, 1)
 FormulaLabel/font_sizes/font_size = 13
@@ -361,6 +403,10 @@ VSeparator/styles/separator = SubResource("StyleBoxLine_separator")
 ValueLabel/base_type = &"Label"
 ValueLabel/colors/font_color = Color(0.06, 0.18, 0.09, 1)
 ValueLabel/font_sizes/font_size = 14
+WarningLabel/base_type = &"Label"
+WarningLabel/colors/font_color = Color(0.62, 0.12, 0.07, 1)
+WarningLabel/font_sizes/font_size = 12
+WarningLabel/fonts/font = ExtResource("2_font_bold")
 WindowButton/base_type = &"Button"
 WindowButton/font_sizes/font_size = 12
 WindowPanel/base_type = &"PanelContainer"

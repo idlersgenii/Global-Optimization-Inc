@@ -1,0 +1,77 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/fatigue_component.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/icons/fatigue_warning.png" id="2_warning"]
+
+[node name="FatigueComponent" type="PanelContainer"]
+theme_type_variation = &"FatiguePanel"
+script = ExtResource("1_script")
+
+[node name="Layout" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="InternCaption" type="Label" parent="Layout"]
+layout_mode = 2
+theme_type_variation = &"FatigueCaption"
+text = "СТАЖЁР АЛЕКСЕЙ"
+
+[node name="FatigueCaption" type="Label" parent="Layout"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "УСТАЛОСТЬ"
+
+[node name="FatigueBar" type="ProgressBar" parent="Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(180, 16)
+layout_mode = 2
+size_flags_vertical = 4
+max_value = 100.0
+show_percentage = false
+theme_type_variation = &"FatigueBar"
+
+[node name="FatiguePercent" type="Label" parent="Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(44, 0)
+layout_mode = 2
+theme_type_variation = &"FatigueLabel"
+text = "0%"
+
+[node name="EfficiencyLabel" type="Label" parent="Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"FatigueLabel"
+text = "ЭФФЕКТИВНОСТЬ: 100%"
+
+[node name="Spacer" type="Control" parent="Layout"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="WarningIcon" type="TextureRect" parent="Layout"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+texture = ExtResource("2_warning")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="WarningLabel" type="Label" parent="Layout"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_type_variation = &"WarningLabel"
+text = "ПЕРЕУТОМЛЕНИЕ"
+
+[node name="CheerButton" type="Button" parent="Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 26)
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Снизить усталость Алексея на 35%"
+text = "ПОДБОДРИТЬ"
+
+[node name="FatigueTimer" type="Timer" parent="."]
+unique_name_in_owner = true
+wait_time = 1.0
+autostart = true

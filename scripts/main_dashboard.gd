@@ -100,6 +100,9 @@ func _connect_signals() -> void:
 	SignalBus.pure_logic_changed.connect(_on_balance_changed)
 	SignalBus.production_multiplier_changed.connect(_on_multiplier_changed)
 	SignalBus.click_multiplier_changed.connect(_on_multiplier_changed)
+	SignalBus.intern_efficiency_changed.connect(_on_multiplier_changed)
+	SignalBus.intern_exhausted.connect(_on_intern_exhausted)
+	SignalBus.intern_cheered.connect(_on_intern_cheered)
 	SignalBus.scale_changed.connect(_on_stage_changed)
 	SignalBus.game_saved.connect(_on_game_saved)
 	SignalBus.game_loaded.connect(_on_game_loaded)
@@ -260,11 +263,12 @@ func _refresh_all() -> void:
 	_coffee_value.text = _format_number(GameState.coffee_coins)
 	_logic_value.text = _format_number(GameState.pure_logic_points)
 	_multiplier_value.text = "×%.2f" % GameState.production_multiplier
-	_click_value.text = _format_number(GameState.click_multiplier)
 	_stage_value.text = _stage_short_name(GameState.current_stage)
 
-	_grind_hint.text = "НАГРАДА: %s CR ЗА КЛИК" % _format_number(GameState.click_multiplier)
-	_grind_button.tooltip_text = "Ручной клик: +%s CR" % _format_number(GameState.click_multiplier)
+	var click_reward := GameState.click_multiplier * GameState.intern_efficiency
+	_click_value.text = _format_number(click_reward)
+	_grind_hint.text = "НАГРАДА: %s CR ЗА КЛИК" % _format_number(click_reward)
+	_grind_button.tooltip_text = "Ручной клик: +%s CR" % _format_number(click_reward)
 	_cups_value.text = _format_cups(GameState.coffee_cups)
 	_save_status.text = "СЕЙВ: %s" % ("ЕСТЬ" if GameState.has_save() else "НЕТ")
 	_stage_status.text = "СТАДИЯ: %s" % _stage_short_name(GameState.current_stage)
@@ -272,7 +276,7 @@ func _refresh_all() -> void:
 	_update_cell(CELL_COFFEE, _format_number(GameState.coffee_coins))
 	_update_cell(CELL_LOGIC, _format_number(GameState.pure_logic_points))
 	_update_cell(CELL_MULTIPLIER, "×%.2f" % GameState.production_multiplier)
-	_update_cell(CELL_CLICK, _format_number(GameState.click_multiplier))
+	_update_cell(CELL_CLICK, _format_number(click_reward))
 	_update_cell(CELL_STAGE, _stage_name(GameState.current_stage))
 
 	_morale_bar.value = 78.0
@@ -291,6 +295,16 @@ func _on_cups_changed(new_count: int) -> void:
 
 func _on_multiplier_changed(_new_multiplier: float) -> void:
 	_refresh_all()
+
+
+func _on_intern_exhausted() -> void:
+	_set_status("АЛЕКСЕЙ ПЕРЕУТОМЛЁН: ЭФФЕКТИВНОСТЬ 50%")
+	_push_ticker("УСТАЛОСТЬ 100%: АЛЕКСЕЙ РАБОТАЕТ ВПОЛСИЛЫ")
+
+
+func _on_intern_cheered(recovery: float) -> void:
+	_set_status("АЛЕКСЕЙ ВЗБОДРЁН. УСТАЛОСТЬ -%d%%" % int(roundf(recovery)))
+	_push_ticker("ПЕРЕРЫВ: АЛЕКСЕЙ ВОССТАНОВИЛ СИЛЫ")
 
 
 func _on_stage_changed(new_stage: int) -> void:

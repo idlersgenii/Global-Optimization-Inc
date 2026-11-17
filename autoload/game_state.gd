@@ -12,6 +12,11 @@ const SAVE_PATH: String = "user://savegame.json"
 const SAVE_VERSION: int = 1
 const DEFAULT_SAVE_SLOT: StringName = &"default"
 
+const FATIGUE_MAX: float = 100.0
+const FATIGUE_PER_TICK: float = 1.0
+const CHEER_RECOVERY: float = 35.0
+const EXHAUSTED_EFFICIENCY: float = 0.5
+
 ## Fiat credits, called "coffee coins" in the game.
 var coffee_coins: float = 0.0
 ## Cups brewed by manual clicks, shown on the dashboard counter.
@@ -25,6 +30,10 @@ var click_multiplier: float = 1.0
 
 ## One of the values in SignalBus.GameScale.
 var current_stage: int = SignalBus.GameScale.CAFE
+
+## Intern Alexey: fatigue fills over time; at 100 % his efficiency halves.
+var intern_fatigue: float = 0.0
+var intern_efficiency: float = 1.0
 
 # --- Coffee coins ----------------------------------------------------------
 
@@ -67,7 +76,7 @@ func _emit_coffee_changed() -> void:
 ## increments the cup counter and broadcasts the result through SignalBus.
 ## Returns the reward so the UI can show floating feedback.
 func grind_coffee() -> float:
-	var reward := maxf(click_multiplier, 0.0)
+	var reward := maxf(click_multiplier * intern_efficiency, 0.0)
 	if reward <= 0.0:
 		return 0.0
 
@@ -78,6 +87,38 @@ func grind_coffee() -> float:
 	SignalBus.coffee_cups_changed.emit(coffee_cups)
 	_emit_coffee_changed()
 	return reward
+
+# --- Intern fatigue --------------------------------------------------------
+
+## Advances Alexey's fatigue. Crossing 100 % halves his efficiency and fires
+## a one-shot exhaustion event for UI feedback.
+func add_fatigue(amount: float) -> void:
+	if amount <= 0.0:
+		return
+
+	var was_exhausted := intern_efficiency < 1.0
+	intern_fatigue = clampf(intern_fatigue + amount, 0.0, FATIGUE_MAX)
+	SignalBus.fatigue_changed.emit(intern_fatigue)
+
+	if intern_fatigue >= FATIGUE_MAX and not was_exhausted:
+		intern_efficiency = EXHAUSTED_EFFICIENCY
+		SignalBus.intern_efficiency_changed.emit(intern_efficiency)
+		SignalBus.intern_exhausted.emit()
+
+
+## Manual intervention: "Подбодрить" recovers fatigue and restores efficiency.
+func cheer_up_intern() -> void:
+	var previous_fatigue := intern_fatigue
+	intern_fatigue = maxf(intern_fatigue - CHEER_RECOVERY, 0.0)
+	var recovery := previous_fatigue - intern_fatigue
+	if recovery <= 0.0:
+		return
+
+	SignalBus.fatigue_changed.emit(intern_fatigue)
+	if intern_efficiency < 1.0:
+		intern_efficiency = 1.0
+		SignalBus.intern_efficiency_changed.emit(intern_efficiency)
+	SignalBus.intern_cheered.emit(recovery)
 
 # --- Pure logic points -----------------------------------------------------
 
@@ -236,6 +277,8 @@ func to_dict() -> Dictionary[String, Variant]:
 		"metaverse_shares": metaverse_shares,
 		"production_multiplier": production_multiplier,
 		"click_multiplier": click_multiplier,
+		"intern_fatigue": intern_fatigue,
+		"intern_efficiency": intern_efficiency,
 		"current_stage": current_stage,
 	}
 
@@ -254,6 +297,8 @@ func _deserialize(data: Dictionary) -> void:
 	metaverse_shares = maxf(float(data.get("metaverse_shares", 0.0)), 0.0)
 	production_multiplier = maxf(float(data.get("production_multiplier", 1.0)), 0.0)
 	click_multiplier = maxf(float(data.get("click_multiplier", 1.0)), 0.0)
+	intern_fatigue = clampf(float(data.get("intern_fatigue", 0.0)), 0.0, FATIGUE_MAX)
+	intern_efficiency = EXHAUSTED_EFFICIENCY if intern_fatigue >= FATIGUE_MAX else 1.0
 	current_stage = clampi(
 		int(data.get("current_stage", SignalBus.GameScale.CAFE)),
 		SignalBus.GameScale.CAFE,
@@ -271,6 +316,8 @@ func reset_state() -> void:
 	metaverse_shares = 0.0
 	production_multiplier = 1.0
 	click_multiplier = 1.0
+	intern_fatigue = 0.0
+	intern_efficiency = 1.0
 	current_stage = SignalBus.GameScale.CAFE
 
 	_emit_all_changes()
@@ -284,4 +331,6 @@ func _emit_all_changes() -> void:
 	_emit_metaverse_shares_changed()
 	SignalBus.production_multiplier_changed.emit(production_multiplier)
 	SignalBus.click_multiplier_changed.emit(click_multiplier)
+	SignalBus.fatigue_changed.emit(intern_fatigue)
+	SignalBus.intern_efficiency_changed.emit(intern_efficiency)
 	SignalBus.scale_changed.emit(current_stage)

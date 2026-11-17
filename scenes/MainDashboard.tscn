@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cwohs1f05l3w2" path="res://scripts/main_dashboard.gd" id="1_script"]
 [ext_resource type="Theme" path="res://assets/themes/spreadsheet_theme.tres" id="2_theme"]
+[ext_resource type="PackedScene" path="res://scenes/FatigueComponent.tscn" id="3_fatigue"]
 
 [node name="MainDashboard" type="Control" unique_id=1658704504]
 layout_mode = 3
@@ -476,6 +477,9 @@ size_flags_vertical = 3
 theme_type_variation = &"TickerLabel"
 text = "> ОЖИДАНИЕ СОБЫТИЙ..."
 autowrap_mode = 3
+
+[node name="FatigueComponent" parent="WindowMargin/WindowFrame/WindowLayout" instance=ExtResource("3_fatigue")]
+layout_mode = 2
 
 [node name="StatusBar" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout" unique_id=263621505]
 layout_mode = 2
