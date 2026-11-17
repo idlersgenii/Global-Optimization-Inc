@@ -14,7 +14,12 @@ const DEFAULT_SAVE_SLOT: StringName = &"default"
 
 const FATIGUE_MAX: float = 100.0
 const FATIGUE_PER_TICK: float = 1.0
+## Fatigue only grows for this many one-second ticks after a grind click.
+## Re-clicking during the window restarts the countdown instead of stacking it.
+const FATIGUE_CLICK_WINDOW_TICKS: int = 5
 const CHEER_RECOVERY: float = 35.0
+const CHEER_COST: float = 5.0
+const CHEER_COOLDOWN_SEC: float = 5.0
 const EXHAUSTED_EFFICIENCY: float = 0.5
 
 ## Fiat credits, called "coffee coins" in the game.
@@ -31,9 +36,14 @@ var click_multiplier: float = 1.0
 ## One of the values in SignalBus.GameScale.
 var current_stage: int = SignalBus.GameScale.CAFE
 
-## Intern Alexey: fatigue fills over time; at 100 % his efficiency halves.
+## Intern Alexey: fatigue fills after clicks; at 100 % his efficiency halves.
 var intern_fatigue: float = 0.0
 var intern_efficiency: float = 1.0
+
+## One-second ticks left in the post-click fatigue window.
+var _fatigue_window_ticks: int = 0
+## Engine time (msec) when the cheer cooldown expires.
+var _cheer_ready_at_msec: int = 0
 
 # --- Coffee coins ----------------------------------------------------------
 
@@ -82,6 +92,8 @@ func grind_coffee() -> float:
 
 	coffee_coins += reward
 	coffee_cups += 1
+	# Each click restarts the fatigue window; clicks never stack extra ticks.
+	_fatigue_window_ticks = FATIGUE_CLICK_WINDOW_TICKS
 	SignalBus.coffee_earned.emit(reward)
 	SignalBus.grind_boost_requested.emit(reward)
 	SignalBus.coffee_cups_changed.emit(coffee_cups)
@@ -106,19 +118,50 @@ func add_fatigue(amount: float) -> void:
 		SignalBus.intern_exhausted.emit()
 
 
-## Manual intervention: "Подбодрить" recovers fatigue and restores efficiency.
-func cheer_up_intern() -> void:
+## Called once per second by the fatigue UI timer. Fatigue only grows while
+## a post-click window is active, so an idle player never gets tired.
+func tick_fatigue() -> void:
+	if _fatigue_window_ticks <= 0:
+		return
+
+	_fatigue_window_ticks -= 1
+	add_fatigue(FATIGUE_PER_TICK)
+
+
+## How many seconds remain before "Подбодрить" can be used again.
+func get_cheer_cooldown_remaining() -> float:
+	var remaining_msec := _cheer_ready_at_msec - Time.get_ticks_msec()
+	return maxf(float(remaining_msec) / 1000.0, 0.0)
+
+
+## True when Alexey is tired, the player can pay the cheer price and the
+## cooldown has expired.
+func can_cheer() -> bool:
+	return (
+		intern_fatigue > 0.0
+		and coffee_coins >= CHEER_COST
+		and get_cheer_cooldown_remaining() <= 0.0
+	)
+
+
+## Manual intervention: "Подбодрить" spends coffee coins, recovers fatigue,
+## restores efficiency and starts the cooldown. Returns true when it happened.
+func cheer_up_intern() -> bool:
+	if not can_cheer():
+		return false
+
 	var previous_fatigue := intern_fatigue
 	intern_fatigue = maxf(intern_fatigue - CHEER_RECOVERY, 0.0)
 	var recovery := previous_fatigue - intern_fatigue
-	if recovery <= 0.0:
-		return
+	_cheer_ready_at_msec = Time.get_ticks_msec() + int(roundf(CHEER_COOLDOWN_SEC * 1000.0))
+	spend_coffee(CHEER_COST)
 
 	SignalBus.fatigue_changed.emit(intern_fatigue)
 	if intern_efficiency < 1.0:
 		intern_efficiency = 1.0
 		SignalBus.intern_efficiency_changed.emit(intern_efficiency)
 	SignalBus.intern_cheered.emit(recovery)
+	return true
 
 # --- Pure logic points -----------------------------------------------------
 
@@ -299,6 +342,8 @@ func _deserialize(data: Dictionary) -> void:
 	click_multiplier = maxf(float(data.get("click_multiplier", 1.0)), 0.0)
 	intern_fatigue = clampf(float(data.get("intern_fatigue", 0.0)), 0.0, FATIGUE_MAX)
 	intern_efficiency = EXHAUSTED_EFFICIENCY if intern_fatigue >= FATIGUE_MAX else 1.0
+	_fatigue_window_ticks = 0
+	_cheer_ready_at_msec = 0
 	current_stage = clampi(
 		int(data.get("current_stage", SignalBus.GameScale.CAFE)),
 		SignalBus.GameScale.CAFE,
@@ -318,6 +363,8 @@ func reset_state() -> void:
 	click_multiplier = 1.0
 	intern_fatigue = 0.0
 	intern_efficiency = 1.0
+	_fatigue_window_ticks = 0
+	_cheer_ready_at_msec = 0
 	current_stage = SignalBus.GameScale.CAFE
 
 	_emit_all_changes()
