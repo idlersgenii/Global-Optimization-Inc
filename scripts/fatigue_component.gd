@@ -13,7 +13,7 @@ extends PanelContainer
 @onready var _warning_label: Label = %WarningLabel
 @onready var _cheer_button: Button = %CheerButton
 @onready var _fatigue_timer: Timer = %FatigueTimer
-@onready var _cheer_cooldown_timer: Timer = %CheerCooldownTimer
+@onready var _cheer_state_timer: Timer = %CheerStateTimer
 
 var _warning_tween: Tween
 
@@ -28,7 +28,7 @@ func _ready() -> void:
 	SignalBus.game_reset.connect(_on_game_reset)
 	_cheer_button.pressed.connect(_on_cheer_pressed)
 	_fatigue_timer.timeout.connect(_on_fatigue_timer_timeout)
-	_cheer_cooldown_timer.timeout.connect(_on_cheer_cooldown_timeout)
+	_cheer_state_timer.timeout.connect(_on_cheer_state_timeout)
 	_refresh_from_state()
 
 
@@ -40,10 +40,13 @@ func _on_cheer_pressed() -> void:
 	GameState.cheer_up_intern()
 
 
-func _on_cheer_cooldown_timeout() -> void:
+func _on_cheer_state_timeout() -> void:
 	_refresh_cheer_state()
-	if GameState.get_cheer_cooldown_remaining() <= 0.0:
-		_cheer_cooldown_timer.stop()
+	if (
+		GameState.get_cheer_cooldown_remaining() <= 0.0
+		and GameState.get_cheer_overuse_remaining() <= 0.0
+	):
+		_cheer_state_timer.stop()
 
 
 func _on_fatigue_changed(new_value: float) -> void:
@@ -61,8 +64,8 @@ func _on_intern_exhausted() -> void:
 	_start_warning_blink()
 
 
-func _on_intern_cheered(_recovery: float) -> void:
-	_cheer_cooldown_timer.start()
+func _on_intern_cheered(_recovery: float, _cost: float) -> void:
+	_cheer_state_timer.start()
 	_refresh_cheer_state()
 
 
@@ -102,7 +105,11 @@ func _apply_warning_state(fatigue: float) -> void:
 
 func _refresh_cheer_state() -> void:
 	var cooldown := GameState.get_cheer_cooldown_remaining()
-	var cost := int(roundf(GameState.CHEER_COST))
+	var cost := int(roundf(GameState.get_cheer_cost()))
+	var recovery_min := int(roundf(GameState.CHEER_RECOVERY_MIN))
+	var recovery_max := int(roundf(GameState.CHEER_RECOVERY_MAX))
+	var overuse := GameState.get_cheer_overuse_steps()
+	var overuse_left := int(ceilf(GameState.get_cheer_overuse_remaining()))
 
 	if cooldown > 0.0:
 		_cheer_button.text = "ПЕРЕРЫВ: %d С" % int(ceilf(cooldown))
@@ -110,19 +117,27 @@ func _refresh_cheer_state() -> void:
 	elif GameState.intern_fatigue <= 0.0:
 		_cheer_button.text = "ПОДБОДРИТЬ · %d CR" % cost
 		_cheer_button.tooltip_text = "Алексей и так бодр"
-	elif GameState.coffee_coins < GameState.CHEER_COST:
+	elif GameState.coffee_coins < GameState.get_cheer_cost():
 		_cheer_button.text = "ПОДБОДРИТЬ · %d CR" % cost
 		_cheer_button.tooltip_text = "Нужно %d CR — не хватает кофе-койнов" % cost
+		if overuse > 0:
+			_cheer_button.tooltip_text += ". Повышенная цена спадёт через %d с" % overuse_left
 	else:
 		_cheer_button.text = "ПОДБОДРИТЬ · %d CR" % cost
 		_cheer_button.tooltip_text = (
-			"Снять %d%% усталости за %d CR. Перезарядка %d с"
+			"Снять %d–%d%% усталости за %d CR. Перезарядка %d с"
 			% [
-				int(roundf(GameState.CHEER_RECOVERY)),
+				recovery_min,
+				recovery_max,
 				cost,
 				int(roundf(GameState.CHEER_COOLDOWN_SEC)),
 			]
 		)
+		if overuse > 0:
+			_cheer_button.tooltip_text += (
+				". Цена повышена за частые перерывы (+%d CR), вернётся через %d с"
+				% [cost - int(roundf(GameState.CHEER_BASE_COST)), overuse_left]
+			)
 
 	_cheer_button.disabled = not GameState.can_cheer()
 

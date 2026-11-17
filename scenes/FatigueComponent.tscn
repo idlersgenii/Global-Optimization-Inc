@@ -68,7 +68,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 26)
 layout_mode = 2
 focus_mode = 0
-tooltip_text = "Снять 35% усталости за 5 CR. Перезарядка 5 с"
+tooltip_text = "Снять 10–30% усталости за 5 CR. Перезарядка 5 с"
 text = "ПОДБОДРИТЬ · 5 CR"
 
 [node name="FatigueTimer" type="Timer" parent="."]
@@ -76,6 +76,6 @@ unique_name_in_owner = true
 wait_time = 1.0
 autostart = true
 
-[node name="CheerCooldownTimer" type="Timer" parent="."]
+[node name="CheerStateTimer" type="Timer" parent="."]
 unique_name_in_owner = true
 wait_time = 1.0

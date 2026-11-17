@@ -302,9 +302,12 @@ func _on_intern_exhausted() -> void:
 	_push_ticker("УСТАЛОСТЬ 100%: АЛЕКСЕЙ РАБОТАЕТ ВПОЛСИЛЫ")
 
 
-func _on_intern_cheered(recovery: float) -> void:
-	_set_status("АЛЕКСЕЙ ВЗБОДРЁН. УСТАЛОСТЬ -%d%%" % int(roundf(recovery)))
-	_push_ticker("ПЕРЕРЫВ: АЛЕКСЕЙ ВОССТАНОВИЛ СИЛЫ")
+func _on_intern_cheered(recovery: float, cost: float) -> void:
+	_set_status(
+		"АЛЕКСЕЙ ВЗБОДРЁН: -%d%% УСТАЛОСТИ, -%d CR"
+		% [int(roundf(recovery)), int(roundf(cost))]
+	)
+	_push_ticker("ПЕРЕРЫВ: АЛЕКСЕЙ ВОССТАНОВИЛ %d%% СИЛ" % int(roundf(recovery)))
 
 
 func _on_stage_changed(new_stage: int) -> void:

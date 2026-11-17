@@ -17,9 +17,17 @@ const FATIGUE_PER_TICK: float = 1.0
 ## Fatigue only grows for this many one-second ticks after a grind click.
 ## Re-clicking during the window restarts the countdown instead of stacking it.
 const FATIGUE_CLICK_WINDOW_TICKS: int = 5
-const CHEER_RECOVERY: float = 35.0
-const CHEER_COST: float = 5.0
+## Cheer recovery is rolled in this range; upgrades will widen it later.
+const CHEER_RECOVERY_MIN: float = 10.0
+const CHEER_RECOVERY_MAX: float = 30.0
+const CHEER_BASE_COST: float = 5.0
+## Every rapid cheer raises the next price by this step (temporary surcharge).
+const CHEER_COST_STEP: float = 5.0
+const CHEER_MAX_OVERUSE_STEPS: int = 3
 const CHEER_COOLDOWN_SEC: float = 5.0
+## Cheers closer than this window count as overuse; the surcharge expires
+## after the player lets Alexey rest for this long.
+const CHEER_OVERUSE_WINDOW_SEC: float = 20.0
 const EXHAUSTED_EFFICIENCY: float = 0.5
 
 ## Fiat credits, called "coffee coins" in the game.
@@ -44,6 +52,9 @@ var intern_efficiency: float = 1.0
 var _fatigue_window_ticks: int = 0
 ## Engine time (msec) when the cheer cooldown expires.
 var _cheer_ready_at_msec: int = 0
+## Temporary cheer-price surcharge: steps and the time it wears off.
+var _cheer_overuse_steps: int = 0
+var _cheer_overuse_until_msec: int = 0
 
 # --- Coffee coins ----------------------------------------------------------
 
@@ -134,33 +145,57 @@ func get_cheer_cooldown_remaining() -> float:
 	return maxf(float(remaining_msec) / 1000.0, 0.0)
 
 
-## True when Alexey is tired, the player can pay the cheer price and the
+## How many seconds the temporary cheer-price surcharge is still active.
+func get_cheer_overuse_remaining() -> float:
+	var remaining_msec := _cheer_overuse_until_msec - Time.get_ticks_msec()
+	return maxf(float(remaining_msec) / 1000.0, 0.0)
+
+
+## Active surcharge steps; drops to zero once Alexey has rested long enough.
+func get_cheer_overuse_steps() -> int:
+	return _cheer_overuse_steps if get_cheer_overuse_remaining() > 0.0 else 0
+
+
+## Current price: base plus a temporary surcharge for rapid repeat cheers.
+func get_cheer_cost() -> float:
+	return CHEER_BASE_COST + float(get_cheer_overuse_steps()) * CHEER_COST_STEP
+
+
+## True when Alexey is tired, the player can pay the current price and the
 ## cooldown has expired.
 func can_cheer() -> bool:
 	return (
 		intern_fatigue > 0.0
-		and coffee_coins >= CHEER_COST
+		and coffee_coins >= get_cheer_cost()
 		and get_cheer_cooldown_remaining() <= 0.0
 	)
 
 
-## Manual intervention: "Подбодрить" spends coffee coins, recovers fatigue,
-## restores efficiency and starts the cooldown. Returns true when it happened.
+## Manual intervention: "Подбодрить" spends coffee coins, recovers a random
+## 10-30 % of fatigue, restores efficiency and starts the cooldown. Cheering
+## again too soon raises the next price for a while. Returns true on success.
 func cheer_up_intern() -> bool:
 	if not can_cheer():
 		return false
 
+	var now_msec := Time.get_ticks_msec()
+	var cost := get_cheer_cost()
+	var rolled_recovery := float(randi_range(
+		int(roundf(CHEER_RECOVERY_MIN)), int(roundf(CHEER_RECOVERY_MAX))
+	))
 	var previous_fatigue := intern_fatigue
-	intern_fatigue = maxf(intern_fatigue - CHEER_RECOVERY, 0.0)
+	intern_fatigue = maxf(intern_fatigue - rolled_recovery, 0.0)
 	var recovery := previous_fatigue - intern_fatigue
-	_cheer_ready_at_msec = Time.get_ticks_msec() + int(roundf(CHEER_COOLDOWN_SEC * 1000.0))
-	spend_coffee(CHEER_COST)
+	_cheer_ready_at_msec = now_msec + int(roundf(CHEER_COOLDOWN_SEC * 1000.0))
+	_cheer_overuse_steps = mini(get_cheer_overuse_steps() + 1, CHEER_MAX_OVERUSE_STEPS)
+	_cheer_overuse_until_msec = now_msec + int(roundf(CHEER_OVERUSE_WINDOW_SEC * 1000.0))
+	spend_coffee(cost)
 
 	SignalBus.fatigue_changed.emit(intern_fatigue)
 	if intern_efficiency < 1.0:
 		intern_efficiency = 1.0
 		SignalBus.intern_efficiency_changed.emit(intern_efficiency)
-	SignalBus.intern_cheered.emit(recovery)
+	SignalBus.intern_cheered.emit(recovery, cost)
 	return true
 
 # --- Pure logic points -----------------------------------------------------
@@ -344,6 +379,8 @@ func _deserialize(data: Dictionary) -> void:
 	intern_efficiency = EXHAUSTED_EFFICIENCY if intern_fatigue >= FATIGUE_MAX else 1.0
 	_fatigue_window_ticks = 0
 	_cheer_ready_at_msec = 0
+	_cheer_overuse_steps = 0
+	_cheer_overuse_until_msec = 0
 	current_stage = clampi(
 		int(data.get("current_stage", SignalBus.GameScale.CAFE)),
 		SignalBus.GameScale.CAFE,
@@ -365,6 +402,8 @@ func reset_state() -> void:
 	intern_efficiency = 1.0
 	_fatigue_window_ticks = 0
 	_cheer_ready_at_msec = 0
+	_cheer_overuse_steps = 0
+	_cheer_overuse_until_msec = 0
 	current_stage = SignalBus.GameScale.CAFE
 
 	_emit_all_changes()
