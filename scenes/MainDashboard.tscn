@@ -1,9 +1,9 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://ctxivx0yo7kv1"]
 
-[ext_resource type="Script" path="res://scripts/main_dashboard.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://cwohs1f05l3w2" path="res://scripts/main_dashboard.gd" id="1_script"]
 [ext_resource type="Theme" path="res://assets/themes/spreadsheet_theme.tres" id="2_theme"]
 
-[node name="MainDashboard" type="Control"]
+[node name="MainDashboard" type="Control" unique_id=1658704504]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -13,7 +13,7 @@ grow_vertical = 2
 theme = ExtResource("2_theme")
 script = ExtResource("1_script")
 
-[node name="DesktopBackground" type="ColorRect" parent="."]
+[node name="DesktopBackground" type="ColorRect" parent="." unique_id=2137381430]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -23,7 +23,7 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.435, 0.459, 0.435, 1)
 
-[node name="WindowMargin" type="MarginContainer" parent="."]
+[node name="WindowMargin" type="MarginContainer" parent="." unique_id=1258835124]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -35,285 +35,284 @@ theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 24
 
-[node name="WindowFrame" type="PanelContainer" parent="WindowMargin"]
+[node name="WindowFrame" type="PanelContainer" parent="WindowMargin" unique_id=2035581812]
 layout_mode = 2
 theme_type_variation = &"WindowPanel"
 
-[node name="WindowLayout" type="VBoxContainer" parent="WindowMargin/WindowFrame"]
+[node name="WindowLayout" type="VBoxContainer" parent="WindowMargin/WindowFrame" unique_id=1371967674]
 layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="TitleBar" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout"]
+[node name="TitleBar" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout" unique_id=1448619164]
 layout_mode = 2
 theme_type_variation = &"TitlePanel"
 
-[node name="TitleLayout" type="HBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/TitleBar"]
+[node name="TitleLayout" type="HBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/TitleBar" unique_id=1252699429]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="TitleLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/TitleBar/TitleLayout"]
+[node name="TitleLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/TitleBar/TitleLayout" unique_id=1385116364]
 layout_mode = 2
 theme_type_variation = &"TitleLabel"
 text = "GLOBAL OPTIMIZATION INC. // ОПТИМИЗАЦИЯ ВСЕГО"
 vertical_alignment = 1
 
-[node name="TitleSpacer" type="Control" parent="WindowMargin/WindowFrame/WindowLayout/TitleBar/TitleLayout"]
+[node name="TitleSpacer" type="Control" parent="WindowMargin/WindowFrame/WindowLayout/TitleBar/TitleLayout" unique_id=1302298436]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="TitleMeta" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/TitleBar/TitleLayout"]
+[node name="TitleMeta" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/TitleBar/TitleLayout" unique_id=1798377373]
 layout_mode = 2
 theme_type_variation = &"TitleMetaLabel"
 text = "AUDIT OS 3.11 // LOCAL"
 vertical_alignment = 1
 
-[node name="MinimizeButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/TitleBar/TitleLayout"]
+[node name="MinimizeButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/TitleBar/TitleLayout" unique_id=567685967]
 unique_name_in_owner = true
-layout_mode = 2
 custom_minimum_size = Vector2(26, 20)
+layout_mode = 2
+tooltip_text = "Свернуть"
 focus_mode = 0
 theme_type_variation = &"WindowButton"
-tooltip_text = "Свернуть"
 text = "—"
 
-[node name="MaximizeButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/TitleBar/TitleLayout"]
+[node name="MaximizeButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/TitleBar/TitleLayout" unique_id=987647349]
 unique_name_in_owner = true
-layout_mode = 2
 custom_minimum_size = Vector2(26, 20)
+layout_mode = 2
+tooltip_text = "Развернуть"
 focus_mode = 0
 theme_type_variation = &"WindowButton"
-tooltip_text = "Развернуть"
 text = "□"
 
-[node name="CloseButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/TitleBar/TitleLayout"]
+[node name="CloseButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/TitleBar/TitleLayout" unique_id=1749843436]
 unique_name_in_owner = true
-layout_mode = 2
 custom_minimum_size = Vector2(26, 20)
+layout_mode = 2
+tooltip_text = "Закрыть"
 focus_mode = 0
 theme_type_variation = &"WindowButton"
-tooltip_text = "Закрыть"
 text = "×"
 
-[node name="MenuBar" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout"]
+[node name="MenuBar" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout" unique_id=1988936353]
 layout_mode = 2
 theme_type_variation = &"MenuPanel"
 
-[node name="MenuLayout" type="HBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/MenuBar"]
+[node name="MenuLayout" type="HBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/MenuBar" unique_id=182052132]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 2
 
-[node name="FileButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/MenuBar/MenuLayout"]
+[node name="FileButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/MenuBar/MenuLayout" unique_id=91748804]
 layout_mode = 2
 focus_mode = 0
 theme_type_variation = &"LegacyMenuButton"
 text = "ФАЙЛ"
 
-[node name="EditButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/MenuBar/MenuLayout"]
+[node name="EditButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/MenuBar/MenuLayout" unique_id=56865576]
 layout_mode = 2
 focus_mode = 0
 theme_type_variation = &"LegacyMenuButton"
 text = "ПРАВКА"
 
-[node name="ViewButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/MenuBar/MenuLayout"]
+[node name="ViewButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/MenuBar/MenuLayout" unique_id=1174265407]
 layout_mode = 2
 focus_mode = 0
 theme_type_variation = &"LegacyMenuButton"
 text = "ВИД"
 
-[node name="ReportButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/MenuBar/MenuLayout"]
+[node name="ReportButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/MenuBar/MenuLayout" unique_id=844831169]
 layout_mode = 2
 focus_mode = 0
 theme_type_variation = &"LegacyMenuButton"
 text = "ОТЧЁТЫ"
 
-[node name="HelpButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/MenuBar/MenuLayout"]
+[node name="HelpButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/MenuBar/MenuLayout" unique_id=1848033669]
 layout_mode = 2
 focus_mode = 0
 theme_type_variation = &"LegacyMenuButton"
 text = "ПОМОЩЬ"
 
-[node name="Toolbar" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout"]
+[node name="Toolbar" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout" unique_id=1373204578]
 layout_mode = 2
 theme_type_variation = &"ToolbarPanel"
 
-[node name="ToolbarLayout" type="HBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/Toolbar"]
+[node name="ToolbarLayout" type="HBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/Toolbar" unique_id=1033417744]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="SaveButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/Toolbar/ToolbarLayout"]
+[node name="SaveButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/Toolbar/ToolbarLayout" unique_id=539318681]
 unique_name_in_owner = true
 layout_mode = 2
+tooltip_text = "Записать состояние в user://savegame.json"
 focus_mode = 0
 theme_type_variation = &"ToolButton"
-tooltip_text = "Записать состояние в user://savegame.json"
 text = "СОХРАНИТЬ"
 
-[node name="LoadButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/Toolbar/ToolbarLayout"]
+[node name="LoadButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/Toolbar/ToolbarLayout" unique_id=161816377]
 unique_name_in_owner = true
 layout_mode = 2
+tooltip_text = "Восстановить последний архив"
 focus_mode = 0
 theme_type_variation = &"ToolButton"
-tooltip_text = "Восстановить последний архив"
 text = "ЗАГРУЗИТЬ"
 
-[node name="ToolbarSeparator" type="VSeparator" parent="WindowMargin/WindowFrame/WindowLayout/Toolbar/ToolbarLayout"]
+[node name="ToolbarSeparator" type="VSeparator" parent="WindowMargin/WindowFrame/WindowLayout/Toolbar/ToolbarLayout" unique_id=2104656234]
 layout_mode = 2
 
-[node name="ExportButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/Toolbar/ToolbarLayout"]
+[node name="ExportButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/Toolbar/ToolbarLayout" unique_id=1333653803]
 layout_mode = 2
 focus_mode = 0
-disabled = true
 theme_type_variation = &"ToolButton"
+disabled = true
 text = "ЭКСПОРТ"
 
-[node name="PrintButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/Toolbar/ToolbarLayout"]
+[node name="PrintButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/Toolbar/ToolbarLayout" unique_id=732998548]
 layout_mode = 2
 focus_mode = 0
-disabled = true
 theme_type_variation = &"ToolButton"
+disabled = true
 text = "ПЕЧАТЬ"
 
-[node name="ToolbarSpacer" type="Control" parent="WindowMargin/WindowFrame/WindowLayout/Toolbar/ToolbarLayout"]
+[node name="ToolbarSpacer" type="Control" parent="WindowMargin/WindowFrame/WindowLayout/Toolbar/ToolbarLayout" unique_id=38546106]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="ModeLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Toolbar/ToolbarLayout"]
+[node name="ModeLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Toolbar/ToolbarLayout" unique_id=2297678]
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "РЕЖИМ: РУЧНОЙ АУДИТ"
 vertical_alignment = 1
 
-[node name="SessionLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Toolbar/ToolbarLayout"]
+[node name="SessionLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Toolbar/ToolbarLayout" unique_id=59897933]
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "СМЕНА №001"
 vertical_alignment = 1
 
-[node name="Body" type="HBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout"]
+[node name="Body" type="HBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout" unique_id=2037888447]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 4
 
-[node name="SheetFrame" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body"]
+[node name="SheetFrame" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body" unique_id=2146798880]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_type_variation = &"SheetPanel"
 
-[node name="SheetLayout" type="VBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame"]
+[node name="SheetLayout" type="VBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame" unique_id=1065132794]
 layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="SheetTabs" type="HBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout"]
+[node name="SheetTabs" type="HBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout" unique_id=2035622974]
 layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="ActiveTab" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetTabs"]
+[node name="ActiveTab" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetTabs" unique_id=2137152264]
 custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 theme_type_variation = &"TabActivePanel"
 
-[node name="ActiveTabLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetTabs/ActiveTab"]
+[node name="ActiveTabLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetTabs/ActiveTab" unique_id=709422298]
 layout_mode = 2
 theme_type_variation = &"CellLabel"
 text = "F1: КОФЕЙНЯ"
 vertical_alignment = 1
 
-[node name="LogisticsTab" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetTabs"]
+[node name="LogisticsTab" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetTabs" unique_id=2103457530]
 custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 theme_type_variation = &"TabInactivePanel"
 
-[node name="LogisticsTabLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetTabs/LogisticsTab"]
+[node name="LogisticsTabLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetTabs/LogisticsTab" unique_id=831686673]
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "F2: ЛОГИСТИКА"
 vertical_alignment = 1
 
-[node name="HrTab" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetTabs"]
+[node name="HrTab" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetTabs" unique_id=577988203]
 custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 theme_type_variation = &"TabInactivePanel"
 
-[node name="HrTabLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetTabs/HrTab"]
+[node name="HrTabLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetTabs/HrTab" unique_id=100151938]
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "F3: HR-АУДИТ"
 vertical_alignment = 1
 
-[node name="SheetScroll" type="ScrollContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout"]
+[node name="SheetScroll" type="ScrollContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout" unique_id=1839960194]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
-vertical_scroll_mode = 1
 
-[node name="SheetGrid" type="GridContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetScroll"]
+[node name="SheetGrid" type="GridContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetScroll" unique_id=743199368]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 columns = 7
 
-[node name="SheetFooter" type="MarginContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout"]
+[node name="SheetFooter" type="MarginContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout" unique_id=2029725366]
 layout_mode = 2
 theme_override_constants/margin_left = 6
 theme_override_constants/margin_top = 2
 theme_override_constants/margin_right = 6
 theme_override_constants/margin_bottom = 2
 
-[node name="FooterLayout" type="HBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetFooter"]
+[node name="FooterLayout" type="HBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetFooter" unique_id=520156709]
 layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="CellCountLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetFooter/FooterLayout"]
+[node name="CellCountLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetFooter/FooterLayout" unique_id=643352744]
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "ЛИСТ 1 ИЗ 3"
 
-[node name="FormulaCountLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetFooter/FooterLayout"]
+[node name="FormulaCountLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetFooter/FooterLayout" unique_id=684922031]
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "ЯЧЕЕК: 140"
 
-[node name="FooterSpacer" type="Control" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetFooter/FooterLayout"]
+[node name="FooterSpacer" type="Control" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetFooter/FooterLayout" unique_id=2049397976]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="CellRefLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetFooter/FooterLayout"]
+[node name="CellRefLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SheetFrame/SheetLayout/SheetFooter/FooterLayout" unique_id=1003898863]
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "A1"
 
-[node name="SidePanel" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body"]
+[node name="SidePanel" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body" unique_id=1367183928]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_vertical = 3
 theme_type_variation = &"SidePanel"
 
-[node name="SideLayout" type="VBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel"]
+[node name="SideLayout" type="VBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel" unique_id=1688156438]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="SideHeader" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout"]
+[node name="SideHeader" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=14230320]
 layout_mode = 2
 theme_type_variation = &"SideHeaderLabel"
 text = "СВОДКА АУДИТА"
 
-[node name="SideSeparator1" type="HSeparator" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout"]
+[node name="SideSeparator1" type="HSeparator" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=1769458664]
 layout_mode = 2
 
-[node name="MetricsGrid" type="GridContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout"]
+[node name="MetricsGrid" type="GridContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=17687334]
 layout_mode = 2
-columns = 2
 theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 6
+columns = 2
 
-[node name="CoffeeCaption" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MetricsGrid"]
+[node name="CoffeeCaption" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MetricsGrid" unique_id=134556321]
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "КОФЕ-КОЙНЫ"
 
-[node name="CoffeeValue" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MetricsGrid"]
+[node name="CoffeeValue" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MetricsGrid" unique_id=1381081815]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -321,12 +320,12 @@ theme_type_variation = &"ValueLabel"
 text = "0.00"
 horizontal_alignment = 2
 
-[node name="LogicCaption" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MetricsGrid"]
+[node name="LogicCaption" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MetricsGrid" unique_id=1462083421]
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "ЧИСТАЯ ЛОГИКА"
 
-[node name="LogicValue" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MetricsGrid"]
+[node name="LogicValue" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MetricsGrid" unique_id=346438857]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -334,12 +333,12 @@ theme_type_variation = &"ValueLabel"
 text = "0.00"
 horizontal_alignment = 2
 
-[node name="MultiplierCaption" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MetricsGrid"]
+[node name="MultiplierCaption" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MetricsGrid" unique_id=943845667]
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "МНОЖИТЕЛЬ"
 
-[node name="MultiplierValue" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MetricsGrid"]
+[node name="MultiplierValue" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MetricsGrid" unique_id=636622978]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -347,12 +346,12 @@ theme_type_variation = &"ValueLabel"
 text = "×1.00"
 horizontal_alignment = 2
 
-[node name="ClickCaption" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MetricsGrid"]
+[node name="ClickCaption" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MetricsGrid" unique_id=908568598]
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "СИЛА КЛИКА"
 
-[node name="ClickValue" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MetricsGrid"]
+[node name="ClickValue" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MetricsGrid" unique_id=1701250898]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -360,12 +359,12 @@ theme_type_variation = &"ValueLabel"
 text = "1.00"
 horizontal_alignment = 2
 
-[node name="StageCaption" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MetricsGrid"]
+[node name="StageCaption" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MetricsGrid" unique_id=1443385371]
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "СТАДИЯ"
 
-[node name="StageValue" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MetricsGrid"]
+[node name="StageValue" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MetricsGrid" unique_id=1668647640]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -373,88 +372,103 @@ theme_type_variation = &"ValueLabel"
 text = "КАФЕ"
 horizontal_alignment = 2
 
-[node name="SideSeparator2" type="HSeparator" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout"]
+[node name="SideSeparator2" type="HSeparator" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=969968165]
 layout_mode = 2
 
-[node name="StaffHeader" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout"]
+[node name="StaffHeader" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=2045795396]
 layout_mode = 2
 theme_type_variation = &"SideHeaderLabel"
 text = "СОСТОЯНИЕ ПЕРСОНАЛА"
 
-[node name="MoraleRow" type="HBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout"]
+[node name="MoraleRow" type="HBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=894780600]
 layout_mode = 2
 
-[node name="MoraleCaption" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MoraleRow"]
+[node name="MoraleCaption" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MoraleRow" unique_id=652092346]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"MutedLabel"
 text = "НАСТРОЕНИЕ"
 
-[node name="MoralePercent" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MoraleRow"]
+[node name="MoralePercent" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/MoraleRow" unique_id=1206905026]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"ValueLabel"
 text = "78%"
 horizontal_alignment = 2
 
-[node name="MoraleBar" type="ProgressBar" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout"]
+[node name="MoraleBar" type="ProgressBar" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=2128221560]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 14)
 layout_mode = 2
 value = 78.0
 show_percentage = false
 
-[node name="OxygenRow" type="HBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout"]
+[node name="OxygenRow" type="HBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=203312361]
 layout_mode = 2
 
-[node name="OxygenCaption" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/OxygenRow"]
+[node name="OxygenCaption" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/OxygenRow" unique_id=701536064]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"MutedLabel"
 text = "КИСЛОРОД"
 
-[node name="OxygenPercent" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/OxygenRow"]
+[node name="OxygenPercent" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/OxygenRow" unique_id=1573001164]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"ValueLabel"
 text = "21.0%"
 horizontal_alignment = 2
 
-[node name="OxygenBar" type="ProgressBar" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout"]
+[node name="OxygenBar" type="ProgressBar" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=965636494]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 14)
 layout_mode = 2
 value = 21.0
-max_value = 100.0
 show_percentage = false
 
-[node name="SideSeparator3" type="HSeparator" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout"]
+[node name="SideSeparator3" type="HSeparator" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=1193008239]
 layout_mode = 2
 
-[node name="GrindButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout"]
+[node name="GrindButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=1361415629]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
-focus_mode = 0
 tooltip_text = "Ручной клик по помолу зёрен"
+focus_mode = 0
 text = "УСКОРИТЬ ПОМОЛ ЗЁРЕН"
 
-[node name="GrindHint" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout"]
+[node name="GrindHint" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=2120836429]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "НАГРАДА: 1.00 CR ЗА КЛИК"
 autowrap_mode = 3
 
-[node name="SideSeparator4" type="HSeparator" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout"]
+[node name="CupsCaption" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "ЧАШЕК СВАРЕНО"
+
+[node name="CupsCounter" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout"]
+layout_mode = 2
+theme_type_variation = &"CounterPanel"
+
+[node name="CupsValue" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/CupsCounter"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"CounterLabel"
+text = "0000"
+horizontal_alignment = 1
+
+[node name="SideSeparator4" type="HSeparator" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=1765814970]
 layout_mode = 2
 
-[node name="TickerHeader" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout"]
+[node name="TickerHeader" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=1495628472]
 layout_mode = 2
 theme_type_variation = &"SideHeaderLabel"
 text = "ЖУРНАЛ СОБЫТИЙ"
 
-[node name="TickerLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout"]
+[node name="TickerLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=599844667]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 90)
 layout_mode = 2
@@ -462,46 +476,52 @@ size_flags_vertical = 3
 theme_type_variation = &"TickerLabel"
 text = "> ОЖИДАНИЕ СОБЫТИЙ..."
 autowrap_mode = 3
-vertical_alignment = 0
 
-[node name="StatusBar" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout"]
+[node name="StatusBar" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout" unique_id=263621505]
 layout_mode = 2
 theme_type_variation = &"StatusPanel"
 
-[node name="StatusLayout" type="HBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/StatusBar"]
+[node name="StatusLayout" type="HBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/StatusBar" unique_id=1268115920]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="StatusMessageLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/StatusBar/StatusLayout"]
+[node name="StatusMessageLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/StatusBar/StatusLayout" unique_id=579656481]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"StatusLabel"
 text = "> ИНИЦИАЛИЗАЦИЯ..."
-clip_text = true
 vertical_alignment = 1
+clip_text = true
 
-[node name="SaveStatusLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/StatusBar/StatusLayout"]
+[node name="SaveStatusLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/StatusBar/StatusLayout" unique_id=1676711449]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"StatusLabel"
 text = "СЕЙВ: НЕТ"
 vertical_alignment = 1
 
-[node name="StageStatusLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/StatusBar/StatusLayout"]
+[node name="StageStatusLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/StatusBar/StatusLayout" unique_id=1756244530]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"StatusLabel"
 text = "СТАДИЯ: КАФЕ"
 vertical_alignment = 1
 
-[node name="ClockLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/StatusBar/StatusLayout"]
+[node name="ClockLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/StatusBar/StatusLayout" unique_id=1964033144]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"StatusLabel"
 text = "--.--.---- --:--:--"
 vertical_alignment = 1
 
-[node name="ClockTimer" type="Timer" parent="."]
-wait_time = 1.0
+[node name="ClockTimer" type="Timer" parent="." unique_id=543182214]
 autostart = true
+
+[node name="ClickAudio" type="AudioStreamPlayer" parent="."]
+unique_name_in_owner = true
+volume_db = -6.0
+
+[node name="SaveAudio" type="AudioStreamPlayer" parent="."]
+unique_name_in_owner = true
+volume_db = -12.0

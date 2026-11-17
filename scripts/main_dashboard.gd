@@ -12,6 +12,14 @@ const ROW_HEADER_WIDTH: float = 40.0
 const CELL_HEIGHT: float = 26.0
 const CELL_WIDTHS: Array[float] = [170.0, 150.0, 74.0, 96.0, 70.0, 70.0]
 const TICKER_LIMIT: int = 4
+const CUP_COUNTER_DIGITS: int = 4
+const CLICK_SOUNDS: Array[AudioStream] = [
+	preload("res://assets/audio/keyboard_click1.wav"),
+	preload("res://assets/audio/keyboard_click2.wav"),
+	preload("res://assets/audio/keyboard_click3.wav"),
+	preload("res://assets/audio/keyboard_click4.wav"),
+]
+const SAVE_SOUND: AudioStream = preload("res://assets/audio/keyboard_longclicks1.wav")
 
 const CELL_COFFEE: Vector2i = Vector2i(1, 2)
 const CELL_LOGIC: Vector2i = Vector2i(1, 3)
@@ -44,6 +52,10 @@ const STAGE_SHORT_NAMES: Dictionary[int, String] = {
 @onready var _oxygen_bar: ProgressBar = %OxygenBar
 @onready var _oxygen_percent: Label = %OxygenPercent
 @onready var _grind_hint: Label = %GrindHint
+@onready var _grind_button: Button = %GrindButton
+@onready var _cups_value: Label = %CupsValue
+@onready var _click_audio: AudioStreamPlayer = %ClickAudio
+@onready var _save_audio: AudioStreamPlayer = %SaveAudio
 @onready var _ticker_label: Label = %TickerLabel
 @onready var _status_message: Label = %StatusMessageLabel
 @onready var _save_status: Label = %SaveStatusLabel
@@ -55,6 +67,8 @@ var _cells: Dictionary[Vector2i, Label] = {}
 var _ticker_messages: Array[String] = []
 var _maximized: bool = false
 var _last_stage: int = SignalBus.GameScale.CAFE
+var _coffee_flash: ColorRect
+var _flash_tween: Tween
 
 
 func _ready() -> void:
@@ -71,7 +85,7 @@ func _ready() -> void:
 		var error := GameState.load_game()
 		if error == OK:
 			_set_status("СЕССИЯ ВОССТАНОВЛЕНА ИЗ АРХИВА")
-			_push_ticker("СЕЙВ ЗАГРУЖЕН: user://savegame.json")
+			_push_ticker("СЕЙВ ЗАГРУЖЕН")
 		else:
 			_set_status("ОШИБКА ЗАГРУЗКИ: %d" % error)
 			_push_ticker("НЕ УДАЛОСЬ ЗАГРУЗИТЬ АРХИВ")
@@ -82,6 +96,7 @@ func _ready() -> void:
 
 func _connect_signals() -> void:
 	SignalBus.coffee_changed.connect(_on_balance_changed)
+	SignalBus.coffee_cups_changed.connect(_on_cups_changed)
 	SignalBus.pure_logic_changed.connect(_on_balance_changed)
 	SignalBus.production_multiplier_changed.connect(_on_multiplier_changed)
 	SignalBus.click_multiplier_changed.connect(_on_multiplier_changed)
@@ -94,7 +109,7 @@ func _connect_signals() -> void:
 func _connect_controls() -> void:
 	%SaveButton.pressed.connect(_on_save_pressed)
 	%LoadButton.pressed.connect(_on_load_pressed)
-	%GrindButton.pressed.connect(_on_grind_pressed)
+	_grind_button.pressed.connect(_on_grind_pressed)
 	%MinimizeButton.pressed.connect(_on_minimize_pressed)
 	%MaximizeButton.pressed.connect(_on_maximize_pressed)
 	%CloseButton.pressed.connect(_on_close_pressed)
@@ -124,6 +139,7 @@ func _build_sheet() -> void:
 			_add_data_cell(column, row)
 
 	_populate_sheet()
+	_create_coffee_flash()
 
 
 func _add_header_cell(column: int, text: String, width: float) -> void:
@@ -169,6 +185,35 @@ func _add_data_cell(column: int, row: int) -> void:
 	cell.add_child(label)
 	_sheet_grid.add_child(cell)
 	_cells[Vector2i(column, row)] = label
+
+
+## Adds an overlay to the coffee-coins cell so manual clicks can flash it
+## without touching the cell's themed StyleBoxFlat.
+func _create_coffee_flash() -> void:
+	var cell_panel := _get_cell_label(CELL_COFFEE.x, CELL_COFFEE.y).get_parent() as PanelContainer
+	if cell_panel == null:
+		return
+
+	_coffee_flash = ColorRect.new()
+	_coffee_flash.color = Color(0.62, 0.93, 0.52, 0.0)
+	_coffee_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_coffee_flash.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_coffee_flash.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	cell_panel.add_child(_coffee_flash)
+
+
+func _flash_coffee_cell() -> void:
+	if _coffee_flash == null:
+		return
+
+	if _flash_tween != null and _flash_tween.is_valid():
+		_flash_tween.kill()
+
+	_coffee_flash.color = Color(0.62, 0.93, 0.52, 0.9)
+	_flash_tween = create_tween()
+	_flash_tween.tween_property(_coffee_flash, "color:a", 0.0, 0.12)
+	_flash_tween.tween_property(_coffee_flash, "color:a", 0.6, 0.06)
+	_flash_tween.tween_property(_coffee_flash, "color:a", 0.0, 0.38)
 
 
 func _populate_sheet() -> void:
@@ -219,6 +264,8 @@ func _refresh_all() -> void:
 	_stage_value.text = _stage_short_name(GameState.current_stage)
 
 	_grind_hint.text = "НАГРАДА: %s CR ЗА КЛИК" % _format_number(GameState.click_multiplier)
+	_grind_button.tooltip_text = "Ручной клик: +%s CR" % _format_number(GameState.click_multiplier)
+	_cups_value.text = _format_cups(GameState.coffee_cups)
 	_save_status.text = "СЕЙВ: %s" % ("ЕСТЬ" if GameState.has_save() else "НЕТ")
 	_stage_status.text = "СТАДИЯ: %s" % _stage_short_name(GameState.current_stage)
 
@@ -236,6 +283,10 @@ func _refresh_all() -> void:
 
 func _on_balance_changed(_new_amount: float) -> void:
 	_refresh_all()
+
+
+func _on_cups_changed(new_count: int) -> void:
+	_cups_value.text = _format_cups(new_count)
 
 
 func _on_multiplier_changed(_new_multiplier: float) -> void:
@@ -268,6 +319,7 @@ func _on_game_reset() -> void:
 func _on_save_pressed() -> void:
 	var error := GameState.save_game()
 	if error == OK:
+		_play_save_sound()
 		_set_status("СОСТОЯНИЕ СОХРАНЕНО")
 		_push_ticker("СЕЙВ ЗАПИСАН НА ДИСК")
 	else:
@@ -291,8 +343,13 @@ func _on_load_pressed() -> void:
 
 
 func _on_grind_pressed() -> void:
-	var reward := GameState.click_multiplier
-	GameState.add_coffee(reward)
+	var reward := GameState.grind_coffee()
+	if reward <= 0.0:
+		_set_status("ПОМОЛ НЕДОСТУПЕН: МНОЖИТЕЛЬ РАВЕН 0")
+		return
+
+	_flash_coffee_cell()
+	_play_click_sound()
 	_set_status("ПОМОЛ УСКОРЕН. БАЛАНС: %s CR" % _format_number(GameState.coffee_coins))
 	_push_ticker("РУЧНОЙ ПОМОЛ: +%s CR" % _format_number(reward))
 
@@ -318,6 +375,27 @@ func _on_maximize_pressed() -> void:
 func _on_close_pressed() -> void:
 	_set_status("ЗАКРЫТИЕ ЗАПРЕЩЕНО ДО ЗАВЕРШЕНИЯ ОПТИМИЗАЦИИ")
 	_push_ticker("ЗАПРОС НА ЗАКРЫТИЕ ОТКЛОНЁН СИСТЕМОЙ")
+
+
+# --- Feedback --------------------------------------------------------------
+
+func _play_click_sound() -> void:
+	if CLICK_SOUNDS.is_empty():
+		return
+	_click_audio.stream = CLICK_SOUNDS[randi_range(0, CLICK_SOUNDS.size() - 1)]
+	_click_audio.pitch_scale = randf_range(0.94, 1.06)
+	_click_audio.play()
+
+
+func _play_save_sound() -> void:
+	_save_audio.stream = SAVE_SOUND
+	_save_audio.play(randf_range(0.0, 4.5))
+	# The recording is a long typing loop; keep only a short burst on save.
+	get_tree().create_timer(1.0).timeout.connect(_stop_save_sound)
+
+
+func _stop_save_sound() -> void:
+	_save_audio.stop()
 
 
 # --- Utilities -------------------------------------------------------------
@@ -363,6 +441,10 @@ func _format_number(value: float) -> String:
 	if magnitude >= 1_000.0:
 		return "%.2fK" % (value / 1_000.0)
 	return "%.2f" % value
+
+
+func _format_cups(cups: int) -> String:
+	return str(maxi(cups, 0)).pad_zeros(CUP_COUNTER_DIGITS)
 
 
 func _stage_name(stage: int) -> String:

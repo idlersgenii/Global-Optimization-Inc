@@ -14,6 +14,8 @@ const DEFAULT_SAVE_SLOT: StringName = &"default"
 
 ## Fiat credits, called "coffee coins" in the game.
 var coffee_coins: float = 0.0
+## Cups brewed by manual clicks, shown on the dashboard counter.
+var coffee_cups: int = 0
 var pure_logic_points: float = 0.0
 var metaverse_shares: float = 0.0
 
@@ -57,6 +59,25 @@ func set_coffee(amount: float) -> void:
 func _emit_coffee_changed() -> void:
 	SignalBus.coffee_changed.emit(coffee_coins)
 	SignalBus.currency_changed.emit(&"coffee", coffee_coins)
+
+
+# --- Manual grind ----------------------------------------------------------
+
+## Brews one cup on a manual click: credits `click_multiplier` coffee coins,
+## increments the cup counter and broadcasts the result through SignalBus.
+## Returns the reward so the UI can show floating feedback.
+func grind_coffee() -> float:
+	var reward := maxf(click_multiplier, 0.0)
+	if reward <= 0.0:
+		return 0.0
+
+	coffee_coins += reward
+	coffee_cups += 1
+	SignalBus.coffee_earned.emit(reward)
+	SignalBus.grind_boost_requested.emit(reward)
+	SignalBus.coffee_cups_changed.emit(coffee_cups)
+	_emit_coffee_changed()
+	return reward
 
 # --- Pure logic points -----------------------------------------------------
 
@@ -210,6 +231,7 @@ func to_dict() -> Dictionary[String, Variant]:
 		"version": SAVE_VERSION,
 		"saved_at_unix": int(Time.get_unix_time_from_system()),
 		"coffee_coins": coffee_coins,
+		"coffee_cups": coffee_cups,
 		"pure_logic_points": pure_logic_points,
 		"metaverse_shares": metaverse_shares,
 		"production_multiplier": production_multiplier,
@@ -227,6 +249,7 @@ func _deserialize(data: Dictionary) -> void:
 		)
 
 	coffee_coins = maxf(float(data.get("coffee_coins", 0.0)), 0.0)
+	coffee_cups = maxi(int(data.get("coffee_cups", 0)), 0)
 	pure_logic_points = maxf(float(data.get("pure_logic_points", 0.0)), 0.0)
 	metaverse_shares = maxf(float(data.get("metaverse_shares", 0.0)), 0.0)
 	production_multiplier = maxf(float(data.get("production_multiplier", 1.0)), 0.0)
@@ -243,6 +266,7 @@ func _deserialize(data: Dictionary) -> void:
 
 func reset_state() -> void:
 	coffee_coins = 0.0
+	coffee_cups = 0
 	pure_logic_points = 0.0
 	metaverse_shares = 0.0
 	production_multiplier = 1.0
@@ -255,6 +279,7 @@ func reset_state() -> void:
 
 func _emit_all_changes() -> void:
 	_emit_coffee_changed()
+	SignalBus.coffee_cups_changed.emit(coffee_cups)
 	_emit_pure_logic_changed()
 	_emit_metaverse_shares_changed()
 	SignalBus.production_multiplier_changed.emit(production_multiplier)

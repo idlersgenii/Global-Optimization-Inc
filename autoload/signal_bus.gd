@@ -28,6 +28,7 @@ enum HRSeverity {
 signal coffee_changed(new_amount: float)
 signal coffee_earned(amount: float)
 signal coffee_spent(amount: float)
+signal coffee_cups_changed(new_count: int)
 signal pure_logic_changed(new_amount: float)
 signal metaverse_shares_changed(new_amount: float)
 signal currency_changed(currency_id: StringName, new_amount: float)
