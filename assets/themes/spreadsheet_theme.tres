@@ -1,7 +1,7 @@
 [gd_resource type="Theme" load_steps=27 format=3]
 
-[ext_resource type="FontFile" path="res://assets/fonts/tt_moons/TT Moons Regular.otf" id="1_font"]
-[ext_resource type="FontFile" path="res://assets/fonts/tt_moons/TT Moons Bold.otf" id="2_font_bold"]
+[ext_resource type="SystemFont" path="res://assets/fonts/arial.tres" id="1_font"]
+[ext_resource type="SystemFont" path="res://assets/fonts/arial_bold.tres" id="2_font_bold"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_window"]
 content_margin_left = 0.0
