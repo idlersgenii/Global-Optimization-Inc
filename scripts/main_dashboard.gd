@@ -268,7 +268,7 @@ func _on_game_reset() -> void:
 func _on_save_pressed() -> void:
 	var error := GameState.save_game()
 	if error == OK:
-		_set_status("СОСТОЯНИЕ СОХРАНЕНО В user://savegame.json")
+		_set_status("СОСТОЯНИЕ СОХРАНЕНО")
 		_push_ticker("СЕЙВ ЗАПИСАН НА ДИСК")
 	else:
 		_set_status("ОШИБКА СОХРАНЕНИЯ: %d" % error)
