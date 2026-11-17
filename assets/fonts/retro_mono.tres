@@ -1,0 +1,9 @@
+[gd_resource type="SystemFont" format=3]
+
+[resource]
+font_names = PackedStringArray("Courier New", "Consolas", "Lucida Console", "Courier")
+font_weight = 400
+antialiasing = 0
+hinting = 0
+subpixel_positioning = 0
+allow_system_fallback = true
