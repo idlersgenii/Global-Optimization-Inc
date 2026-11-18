@@ -254,9 +254,11 @@ func can_cheer() -> bool:
 	)
 
 
-## Manual intervention: "Подбодрить" spends coffee coins and permanently
-## raises natural recovery by CHEER_RECOVERY_BONUS_STEP. Cheering again too
-## soon raises the next price for a while. Returns true on success.
+## Manual intervention: "Подбодрить" spends coffee coins, permanently raises
+## natural recovery by CHEER_RECOVERY_BONUS_STEP and immediately starts the
+## rest, skipping the idle wait so fatigue begins dropping right away. The next
+## grind click still cancels recovery and restarts the full wait. Cheering
+## again too soon raises the next price for a while. Returns true on success.
 func cheer_up_intern() -> bool:
 	if not can_cheer():
 		return false
@@ -264,6 +266,12 @@ func cheer_up_intern() -> bool:
 	var now_msec := Time.get_ticks_msec()
 	var cost := get_cheer_cost()
 	natural_recovery_bonus += CHEER_RECOVERY_BONUS_STEP
+	# Starting a break also stops the current click-fatigue burst, so the bar
+	# visibly turns around instead of ticking up for a few more seconds.
+	_fatigue_window_ticks = 0
+	# Treat the idle threshold as already reached so the boosted rate applies
+	# immediately instead of only after the usual 30-second timeout.
+	_last_activity_msec = now_msec - int(roundf(NATURAL_RECOVERY_IDLE_SEC * 1000.0))
 	_cheer_ready_at_msec = now_msec + int(roundf(CHEER_COOLDOWN_SEC * 1000.0))
 	_cheer_overuse_steps = mini(get_cheer_overuse_steps() + 1, CHEER_MAX_OVERUSE_STEPS)
 	_cheer_overuse_until_msec = now_msec + int(roundf(CHEER_OVERUSE_WINDOW_SEC * 1000.0))
