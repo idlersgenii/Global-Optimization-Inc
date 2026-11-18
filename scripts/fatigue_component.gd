@@ -4,8 +4,9 @@ extends PanelContainer
 ## The component owns only presentation and the one-second Timer. Fatigue
 ## mutations live in GameState and come back through SignalBus, so the UI
 ## never polls game state directly. Fatigue only grows during the short
-## post-click window that GameState opens on every manual grind, and it recovers
-## slowly again after a longer period without clicking.
+## post-click window that GameState opens on every manual grind; the base
+## recovery returns after a longer idle period, while a temporary cheer buff
+## keeps recovering fatigue even during active clicking.
 
 @onready var _fatigue_bar: ProgressBar = %FatigueBar
 @onready var _fatigue_percent: Label = %FatiguePercent
@@ -68,7 +69,7 @@ func _on_intern_exhausted() -> void:
 	_start_warning_blink()
 
 
-func _on_intern_cheered(_boost: float, _cost: float, _natural_rate: float) -> void:
+func _on_intern_cheered(_boost: float, _cost: float, _buff_rate: float) -> void:
 	_cheer_state_timer.start()
 	_refresh_cheer_state()
 	_refresh_recovery_state()
@@ -113,30 +114,57 @@ func _apply_warning_state(fatigue: float) -> void:
 		_stop_warning_blink()
 
 
-## Shows either the active passive rate or the remaining idle time before it
-## turns on. Updated once per second and when the recovery state changes.
+## Shows the total passive rate, the remaining cheer-buff time or the idle
+## countdown. Updated once per second and when the recovery state changes.
 func _refresh_recovery_state() -> void:
+	var buff_rate := GameState.get_cheer_buff_rate()
+	var buff_left := int(ceilf(GameState.get_cheer_buff_remaining()))
+	var buff_active := buff_rate > 0.0
+	var base_rate := GameState.get_base_recovery_rate()
+	var base_left := int(ceilf(GameState.get_idle_seconds_remaining()))
+	var total_rate := GameState.get_natural_recovery_rate()
+
+	var base_text := ""
+	if base_rate > 0.0:
+		base_text = "Базовое восстановление +%s%%/с" % String.num(base_rate, 1)
+	elif base_left > 0:
+		base_text = (
+			"Базовое восстановление +%s%%/с включится после %d с без ручного помола"
+			% [String.num(GameState.NATURAL_RECOVERY_BASE, 1), base_left]
+		)
+
+	var buff_text := ""
+	if buff_active:
+		buff_text = "Бафф «Подбодрить» +%s%%/с, осталось %d с" % [
+			String.num(buff_rate, 1), buff_left
+		]
+
 	if GameState.intern_fatigue <= 0.0:
 		_recovery_label.text = "РЕГЕНЕРАЦИЯ: —"
-		_recovery_label.tooltip_text = (
-			"Алексей полностью бодр. После простоя регенерация: +%s%%/с"
-			% String.num(GameState.get_natural_recovery_potential_rate(), 1)
+		_recovery_label.tooltip_text = _join_tooltip(
+			["Алексей полностью бодр.", base_text, buff_text]
 		)
 		return
 
-	if GameState.is_natural_recovery_active():
+	if total_rate > 0.0:
 		_recovery_label.text = (
-			"РЕГЕНЕРАЦИЯ: +%s%%/С" % String.num(GameState.get_natural_recovery_rate(), 1)
+			"РЕГЕНЕРАЦИЯ: +%s%%/С" % String.num(total_rate, 1)
 		)
-		_recovery_label.tooltip_text = "Алексей отдыхает: усталость снижается сама"
+		if buff_active:
+			_recovery_label.text += " · БАФФ %d С" % buff_left
+		_recovery_label.tooltip_text = _join_tooltip([base_text, buff_text])
 		return
 
-	var remaining := int(ceilf(GameState.get_idle_seconds_remaining()))
-	_recovery_label.text = "ОТДЫХ ЧЕРЕЗ %d С" % remaining
-	_recovery_label.tooltip_text = (
-		"Естественное восстановление +%s%%/с включится после %d с без ручного помола"
-		% [String.num(GameState.get_natural_recovery_potential_rate(), 1), remaining]
-	)
+	_recovery_label.text = "ОТДЫХ ЧЕРЕЗ %d С" % base_left
+	_recovery_label.tooltip_text = _join_tooltip([base_text, buff_text])
+
+
+func _join_tooltip(parts: Array[String]) -> String:
+	var filtered := PackedStringArray()
+	for part in parts:
+		if not part.is_empty():
+			filtered.append(part)
+	return ". ".join(filtered)
 
 
 func _refresh_cheer_state() -> void:
@@ -144,13 +172,17 @@ func _refresh_cheer_state() -> void:
 	var cost_value := GameState.get_cheer_cost()
 	var cost := int(roundf(cost_value))
 	var bonus := GameState.CHEER_RECOVERY_BONUS_STEP
-	var potential_rate := GameState.get_natural_recovery_potential_rate()
+	var duration := int(roundf(GameState.CHEER_BUFF_DURATION_SEC))
+	var buff_rate := GameState.get_cheer_buff_rate()
+	var buff_left := int(ceilf(GameState.get_cheer_buff_remaining()))
 	var overuse := GameState.get_cheer_overuse_steps()
 	var overuse_left := int(ceilf(GameState.get_cheer_overuse_remaining()))
 
 	var extras := ""
+	if buff_rate > 0.0:
+		extras += ". Бафф +%s%%/с ещё %d с" % [String.num(buff_rate, 1), buff_left]
 	if overuse > 0:
-		extras = (
+		extras += (
 			". Цена повышена за частые перерывы (+%d CR), вернётся через %d с"
 			% [cost - int(roundf(GameState.CHEER_BASE_COST)), overuse_left]
 		)
@@ -168,11 +200,14 @@ func _refresh_cheer_state() -> void:
 	else:
 		_cheer_button.text = "ПОДБОДРИТЬ · %d CR" % cost
 		_cheer_button.tooltip_text = (
-			"Повысить естественное восстановление на +%s%%/с за %d CR. Сейчас +%s%%/с, перезарядка %d с%s"
+			(
+				"Дать бафф +%s%%/с к регенерации на %d с за %d CR. "
+				+ "Перезарядка %d с%s"
+			)
 			% [
 				String.num(bonus, 1),
+				duration,
 				cost,
-				String.num(potential_rate, 1),
 				int(roundf(GameState.CHEER_COOLDOWN_SEC)),
 				extras,
 			]

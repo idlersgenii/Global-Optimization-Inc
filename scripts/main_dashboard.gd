@@ -67,6 +67,7 @@ var _cells: Dictionary[Vector2i, Label] = {}
 var _ticker_messages: Array[String] = []
 var _maximized: bool = false
 var _last_stage: int = SignalBus.GameScale.CAFE
+var _recovery_was_active: bool = false
 var _coffee_flash: ColorRect
 var _flash_tween: Tween
 
@@ -303,24 +304,26 @@ func _on_intern_exhausted() -> void:
 	_push_ticker("УСТАЛОСТЬ 100%: АЛЕКСЕЙ РАБОТАЕТ ВПОЛСИЛЫ")
 
 
-func _on_intern_cheered(boost: float, cost: float, natural_rate: float) -> void:
+func _on_intern_cheered(_boost: float, cost: float, buff_rate: float) -> void:
+	var duration := int(roundf(GameState.CHEER_BUFF_DURATION_SEC))
 	_set_status(
-		"АЛЕКСЕЙ ВЗБОДРЁН: +%s%%/С К РЕГЕНЕРАЦИИ, -%d CR"
-		% [String.num(boost, 1), int(roundf(cost))]
+		"АЛЕКСЕЙ ВЗБОДРЁН: БАФФ +%s%%/С НА %d С, -%d CR"
+		% [String.num(buff_rate, 1), duration, int(roundf(cost))]
 	)
 	_push_ticker(
-		"ПЕРЕРЫВ: РЕГЕНЕРАЦИЯ +%s%%/С ЗА %d CR"
-		% [String.num(natural_rate, 1), int(roundf(cost))]
+		"ПЕРЕРЫВ: БАФФ +%s%%/С НА %d С ЗА %d CR"
+		% [String.num(buff_rate, 1), duration, int(roundf(cost))]
 	)
 
 
 func _on_natural_recovery_changed(rate: float, active: bool) -> void:
-	if active:
+	if active and not _recovery_was_active:
 		_set_status("АЛЕКСЕЙ ОТДЫХАЕТ: РЕГЕНЕРАЦИЯ +%s%%/С" % String.num(rate, 1))
 		_push_ticker("ПАССИВНОЕ ВОССТАНОВЛЕНИЕ: +%s%%/С" % String.num(rate, 1))
-	elif GameState.intern_fatigue <= 0.0:
+	elif _recovery_was_active and not active and GameState.intern_fatigue <= 0.0:
 		_set_status("АЛЕКСЕЙ ОТДОХНУЛ: УСТАЛОСТЬ 0%")
 		_push_ticker("РЕГЕНЕРАЦИЯ ЗАВЕРШЕНА: АЛЕКСЕЙ ПОЛОН СИЛ")
+	_recovery_was_active = active
 
 
 func _on_stage_changed(new_stage: int) -> void:

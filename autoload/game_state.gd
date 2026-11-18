@@ -9,7 +9,7 @@ extends Node
 ## decides whether to call `load_game()` when `has_save()` is true.
 
 const SAVE_PATH: String = "user://savegame.json"
-const SAVE_VERSION: int = 1
+const SAVE_VERSION: int = 2
 const DEFAULT_SAVE_SLOT: StringName = &"default"
 
 const FATIGUE_MAX: float = 100.0
@@ -21,10 +21,14 @@ const FATIGUE_CLICK_WINDOW_TICKS: int = 5
 ## after this many seconds without a manual grind click. Upgrades will shorten
 ## the wait later.
 const NATURAL_RECOVERY_IDLE_SEC: float = 30.0
-## Percentage points of fatigue recovered per second while resting. The cheer
-## button permanently raises this rate; upgrades will raise both values later.
+## Percentage points of fatigue recovered per second while resting. Upgrades
+## will raise this value later.
 const NATURAL_RECOVERY_BASE: float = 0.5
+## "Подбодрить" grants a temporary, stacking regeneration buff: each purchase
+## adds CHEER_RECOVERY_BONUS_STEP percentage points per second for
+## CHEER_BUFF_DURATION_SEC, and the buff keeps working during manual clicks.
 const CHEER_RECOVERY_BONUS_STEP: float = 1.0
+const CHEER_BUFF_DURATION_SEC: float = 30.0
 const CHEER_BASE_COST: float = 5.0
 ## Every rapid cheer raises the next price by this step (temporary surcharge).
 const CHEER_COST_STEP: float = 5.0
@@ -52,15 +56,17 @@ var current_stage: int = SignalBus.GameScale.CAFE
 ## Intern Alexey: fatigue fills after clicks; at 100 % his efficiency halves.
 var intern_fatigue: float = 0.0
 var intern_efficiency: float = 1.0
-## Extra percentage points per second added to natural recovery by cheering.
-var natural_recovery_bonus: float = 0.0
+## Temporary stacking regeneration buff bought with "Подбодрить".
+var _cheer_buff_stacks: int = 0
+var _cheer_buff_until_msec: int = 0
 
 ## One-second ticks left in the post-click fatigue window.
 var _fatigue_window_ticks: int = 0
 ## Engine time (msec) of the last manual grind click.
 var _last_activity_msec: int = 0
-## Cached natural-recovery state, used to emit edge-triggered changes.
+## Cached total-recovery state, used to emit edge-triggered changes.
 var _natural_recovery_active: bool = false
+var _last_recovery_rate: float = 0.0
 ## Engine time (msec) when the cheer cooldown expires.
 var _cheer_ready_at_msec: int = 0
 ## Temporary cheer-price surcharge: steps and the time it wears off.
@@ -130,50 +136,56 @@ func grind_coffee() -> float:
 
 # --- Intern fatigue --------------------------------------------------------
 
-## Per-frame passive recovery. It only runs after NATURAL_RECOVERY_IDLE_SEC
-## without manual work; any grind click drops the current rate back to zero.
+## Per-frame passive recovery. The base portion only runs after
+## NATURAL_RECOVERY_IDLE_SEC without manual work, while the temporary cheer
+## buff keeps recovering fatigue even during active clicking.
 func _process(delta: float) -> void:
-	var active := is_natural_recovery_active()
-	if active != _natural_recovery_active:
+	_expire_cheer_buff_if_needed()
+	var rate := get_natural_recovery_rate()
+	var active := rate > 0.0
+	if active != _natural_recovery_active or not is_equal_approx(rate, _last_recovery_rate):
 		_natural_recovery_active = active
-		SignalBus.natural_recovery_changed.emit(get_natural_recovery_rate(), active)
+		_last_recovery_rate = rate
+		SignalBus.natural_recovery_changed.emit(rate, active)
 
 	if not active:
 		return
 
-	intern_fatigue = maxf(
-		intern_fatigue - get_natural_recovery_rate() * delta,
-		0.0
-	)
+	intern_fatigue = maxf(intern_fatigue - rate * delta, 0.0)
 	SignalBus.fatigue_changed.emit(intern_fatigue)
 	_sync_efficiency_with_fatigue()
 
 
-## Called on every manual grind click. Any activity resets natural recovery
-## to zero and restarts the full idle wait.
+## Called on every manual grind click. Activity only pauses the base passive
+## recovery; the temporary cheer buff keeps working through manual labor.
 func register_activity() -> void:
 	_last_activity_msec = Time.get_ticks_msec()
-	if _natural_recovery_active:
-		_natural_recovery_active = false
-		SignalBus.natural_recovery_changed.emit(0.0, false)
 
 
-## True while Alexey is tired and has been left alone long enough.
-func is_natural_recovery_active() -> bool:
-	return intern_fatigue > 0.0 and get_idle_seconds_remaining() <= 0.0
-
-
-## Current recovery rate in percentage points per second; zero while working
-## or before the idle threshold is reached.
-func get_natural_recovery_rate() -> float:
-	if not is_natural_recovery_active():
+## Base passive recovery: zero until the player has been idle long enough.
+func get_base_recovery_rate() -> float:
+	if intern_fatigue <= 0.0 or get_idle_seconds_remaining() > 0.0:
 		return 0.0
-	return get_natural_recovery_potential_rate()
+	return NATURAL_RECOVERY_BASE
 
 
-## Rate that applies once the idle wait is over: base plus cheer bonuses.
-func get_natural_recovery_potential_rate() -> float:
-	return NATURAL_RECOVERY_BASE + natural_recovery_bonus
+## Temporary regeneration from "Подбодрить"; independent of the idle timer.
+func get_cheer_buff_rate() -> float:
+	if _cheer_buff_stacks <= 0 or get_cheer_buff_remaining() <= 0.0:
+		return 0.0
+	return float(_cheer_buff_stacks) * CHEER_RECOVERY_BONUS_STEP
+
+
+## Total passive recovery: base plus the temporary cheer buff.
+func get_natural_recovery_rate() -> float:
+	if intern_fatigue <= 0.0:
+		return 0.0
+	return get_base_recovery_rate() + get_cheer_buff_rate()
+
+
+## True while any passive recovery is running, base or cheer buff.
+func is_natural_recovery_active() -> bool:
+	return get_natural_recovery_rate() > 0.0
 
 
 ## Seconds since the last manual grind click.
@@ -181,9 +193,27 @@ func get_idle_seconds() -> float:
 	return maxf(float(Time.get_ticks_msec() - _last_activity_msec) / 1000.0, 0.0)
 
 
-## Seconds left before natural recovery turns on.
+## Seconds left before the base passive recovery turns on.
 func get_idle_seconds_remaining() -> float:
 	return maxf(NATURAL_RECOVERY_IDLE_SEC - get_idle_seconds(), 0.0)
+
+
+## Seconds left on the temporary "Подбодрить" buff.
+func get_cheer_buff_remaining() -> float:
+	var remaining_msec := _cheer_buff_until_msec - Time.get_ticks_msec()
+	return maxf(float(remaining_msec) / 1000.0, 0.0)
+
+
+## Active stacks of the temporary "Подбодрить" buff.
+func get_cheer_buff_stacks() -> int:
+	return _cheer_buff_stacks if get_cheer_buff_remaining() > 0.0 else 0
+
+
+## Clears expired stacks so the UI and saves never see a dead buff.
+func _expire_cheer_buff_if_needed() -> void:
+	if _cheer_buff_stacks > 0 and get_cheer_buff_remaining() <= 0.0:
+		_cheer_buff_stacks = 0
+		_cheer_buff_until_msec = 0
 
 
 ## Advances Alexey's fatigue. Crossing 100 % halves his efficiency and fires
@@ -244,9 +274,8 @@ func get_cheer_cost() -> float:
 
 
 ## True when the player can pay the current price and the cooldown has
-## expired. Cheering is allowed even at 0 % fatigue so the permanent recovery
-## upgrade can be bought ahead of time; the current rate stays 0 until the
-## idle wait is over.
+## expired. Cheering is allowed even at 0 % fatigue so the temporary buff can
+## be prepared ahead of time.
 func can_cheer() -> bool:
 	return (
 		coffee_coins >= get_cheer_cost()
@@ -254,40 +283,36 @@ func can_cheer() -> bool:
 	)
 
 
-## Manual intervention: "Подбодрить" spends coffee coins, permanently raises
-## natural recovery by CHEER_RECOVERY_BONUS_STEP and immediately starts the
-## rest, skipping the idle wait so fatigue begins dropping right away. The next
-## grind click still cancels recovery and restarts the full wait. Cheering
-## again too soon raises the next price for a while. Returns true on success.
+## Manual intervention: "Подбодрить" spends coffee coins and grants a temporary
+## stacking +CHEER_RECOVERY_BONUS_STEP %/s regeneration buff for
+## CHEER_BUFF_DURATION_SEC. The buff survives manual clicks; only the base
+## idle recovery is paused by activity. Cheering again too soon raises the next
+## price for a while. Returns true on success.
 func cheer_up_intern() -> bool:
 	if not can_cheer():
 		return false
 
 	var now_msec := Time.get_ticks_msec()
 	var cost := get_cheer_cost()
-	natural_recovery_bonus += CHEER_RECOVERY_BONUS_STEP
+	_cheer_buff_stacks += 1
+	_cheer_buff_until_msec = now_msec + int(roundf(CHEER_BUFF_DURATION_SEC * 1000.0))
 	# Starting a break also stops the current click-fatigue burst, so the bar
 	# visibly turns around instead of ticking up for a few more seconds.
 	_fatigue_window_ticks = 0
-	# Treat the idle threshold as already reached so the boosted rate applies
-	# immediately instead of only after the usual 30-second timeout.
-	_last_activity_msec = now_msec - int(roundf(NATURAL_RECOVERY_IDLE_SEC * 1000.0))
 	_cheer_ready_at_msec = now_msec + int(roundf(CHEER_COOLDOWN_SEC * 1000.0))
 	_cheer_overuse_steps = mini(get_cheer_overuse_steps() + 1, CHEER_MAX_OVERUSE_STEPS)
 	_cheer_overuse_until_msec = now_msec + int(roundf(CHEER_OVERUSE_WINDOW_SEC * 1000.0))
 	spend_coffee(cost)
 
-	var recovery_active := is_natural_recovery_active()
-	_natural_recovery_active = recovery_active
-	if recovery_active:
-		SignalBus.natural_recovery_changed.emit(
-			get_natural_recovery_rate(),
-			true
-		)
+	var rate := get_natural_recovery_rate()
+	_natural_recovery_active = rate > 0.0
+	_last_recovery_rate = rate
+	if rate > 0.0:
+		SignalBus.natural_recovery_changed.emit(rate, true)
 	SignalBus.intern_cheered.emit(
 		CHEER_RECOVERY_BONUS_STEP,
 		cost,
-		get_natural_recovery_potential_rate()
+		get_cheer_buff_rate()
 	)
 	return true
 
@@ -450,7 +475,8 @@ func to_dict() -> Dictionary[String, Variant]:
 		"click_multiplier": click_multiplier,
 		"intern_fatigue": intern_fatigue,
 		"intern_efficiency": intern_efficiency,
-		"natural_recovery_bonus": natural_recovery_bonus,
+		"cheer_buff_stacks": _cheer_buff_stacks,
+		"cheer_buff_remaining_sec": get_cheer_buff_remaining(),
 		"current_stage": current_stage,
 	}
 
@@ -471,10 +497,34 @@ func _deserialize(data: Dictionary) -> void:
 	click_multiplier = maxf(float(data.get("click_multiplier", 1.0)), 0.0)
 	intern_fatigue = clampf(float(data.get("intern_fatigue", 0.0)), 0.0, FATIGUE_MAX)
 	intern_efficiency = EXHAUSTED_EFFICIENCY if intern_fatigue >= FATIGUE_MAX else 1.0
-	natural_recovery_bonus = maxf(float(data.get("natural_recovery_bonus", 0.0)), 0.0)
+	_cheer_buff_stacks = 0
+	_cheer_buff_until_msec = 0
+	if loaded_version >= 2:
+		_cheer_buff_stacks = maxi(int(data.get("cheer_buff_stacks", 0)), 0)
+		var buff_remaining := maxf(
+			float(data.get("cheer_buff_remaining_sec", 0.0)), 0.0
+		)
+		if _cheer_buff_stacks > 0 and buff_remaining > 0.0:
+			_cheer_buff_until_msec = (
+				Time.get_ticks_msec() + int(roundf(buff_remaining * 1000.0))
+			)
+		else:
+			_cheer_buff_stacks = 0
+	else:
+		# Older saves stored a permanent bonus; convert it into a fresh
+		# temporary buff so existing progress is not lost.
+		_cheer_buff_stacks = maxi(
+			int(roundf(float(data.get("natural_recovery_bonus", 0.0)))), 0
+		)
+		if _cheer_buff_stacks > 0:
+			_cheer_buff_until_msec = (
+				Time.get_ticks_msec()
+				+ int(roundf(CHEER_BUFF_DURATION_SEC * 1000.0))
+			)
 	_fatigue_window_ticks = 0
 	_last_activity_msec = Time.get_ticks_msec()
 	_natural_recovery_active = false
+	_last_recovery_rate = 0.0
 	_cheer_ready_at_msec = 0
 	_cheer_overuse_steps = 0
 	_cheer_overuse_until_msec = 0
@@ -497,10 +547,12 @@ func reset_state() -> void:
 	click_multiplier = 1.0
 	intern_fatigue = 0.0
 	intern_efficiency = 1.0
-	natural_recovery_bonus = 0.0
+	_cheer_buff_stacks = 0
+	_cheer_buff_until_msec = 0
 	_fatigue_window_ticks = 0
 	_last_activity_msec = Time.get_ticks_msec()
 	_natural_recovery_active = false
+	_last_recovery_rate = 0.0
 	_cheer_ready_at_msec = 0
 	_cheer_overuse_steps = 0
 	_cheer_overuse_until_msec = 0
@@ -519,9 +571,10 @@ func _emit_all_changes() -> void:
 	SignalBus.click_multiplier_changed.emit(click_multiplier)
 	SignalBus.fatigue_changed.emit(intern_fatigue)
 	SignalBus.intern_efficiency_changed.emit(intern_efficiency)
-	_natural_recovery_active = is_natural_recovery_active()
+	_last_recovery_rate = get_natural_recovery_rate()
+	_natural_recovery_active = _last_recovery_rate > 0.0
 	SignalBus.natural_recovery_changed.emit(
-		get_natural_recovery_rate(),
+		_last_recovery_rate,
 		_natural_recovery_active
 	)
 	SignalBus.scale_changed.emit(current_stage)
