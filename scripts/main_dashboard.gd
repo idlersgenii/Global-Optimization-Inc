@@ -103,6 +103,7 @@ func _connect_signals() -> void:
 	SignalBus.intern_efficiency_changed.connect(_on_multiplier_changed)
 	SignalBus.intern_exhausted.connect(_on_intern_exhausted)
 	SignalBus.intern_cheered.connect(_on_intern_cheered)
+	SignalBus.fatigue_recovery_finished.connect(_on_fatigue_recovery_finished)
 	SignalBus.scale_changed.connect(_on_stage_changed)
 	SignalBus.game_saved.connect(_on_game_saved)
 	SignalBus.game_loaded.connect(_on_game_loaded)
@@ -302,12 +303,17 @@ func _on_intern_exhausted() -> void:
 	_push_ticker("УСТАЛОСТЬ 100%: АЛЕКСЕЙ РАБОТАЕТ ВПОЛСИЛЫ")
 
 
-func _on_intern_cheered(recovery: float, cost: float) -> void:
+func _on_intern_cheered(_recovery: float, cost: float, target: float) -> void:
 	_set_status(
-		"АЛЕКСЕЙ ВЗБОДРЁН: -%d%% УСТАЛОСТИ, -%d CR"
-		% [int(roundf(recovery)), int(roundf(cost))]
+		"АЛЕКСЕЙ ВЗБОДРЁН: ВОССТАНОВЛЕНИЕ ДО %d%%, -%d CR"
+		% [int(roundf(target)), int(roundf(cost))]
 	)
-	_push_ticker("ПЕРЕРЫВ: АЛЕКСЕЙ ВОССТАНОВИЛ %d%% СИЛ" % int(roundf(recovery)))
+	_push_ticker("ПЕРЕРЫВ: УСТАЛОСТЬ СНИЗИТСЯ ДО %d%%" % int(roundf(target)))
+
+
+func _on_fatigue_recovery_finished() -> void:
+	_set_status("АЛЕКСЕЙ ВОССТАНОВИЛСЯ: УСТАЛОСТЬ %d%%" % int(roundf(GameState.intern_fatigue)))
+	_push_ticker("ПЕРЕРЫВ ОКОНЧЕН: АЛЕКСЕЙ СНОВА В СТРОЮ")
 
 
 func _on_stage_changed(new_stage: int) -> void:

@@ -20,6 +20,9 @@ const FATIGUE_CLICK_WINDOW_TICKS: int = 5
 ## Cheer recovery is rolled in this range; upgrades will widen it later.
 const CHEER_RECOVERY_MIN: float = 10.0
 const CHEER_RECOVERY_MAX: float = 30.0
+## Recovery speed in percentage points per second. The time to reach the target
+## is (current fatigue - target) / rate, so clicks during recovery extend it.
+const CHEER_RECOVERY_RATE: float = 5.0
 const CHEER_BASE_COST: float = 5.0
 ## Every rapid cheer raises the next price by this step (temporary surcharge).
 const CHEER_COST_STEP: float = 5.0
@@ -50,6 +53,9 @@ var intern_efficiency: float = 1.0
 
 ## One-second ticks left in the post-click fatigue window.
 var _fatigue_window_ticks: int = 0
+## Gradual cheer recovery: fatigue moves toward this threshold while active.
+var _fatigue_recovery_target: float = 0.0
+var _fatigue_recovery_active: bool = false
 ## Engine time (msec) when the cheer cooldown expires.
 var _cheer_ready_at_msec: int = 0
 ## Temporary cheer-price surcharge: steps and the time it wears off.
@@ -113,20 +119,57 @@ func grind_coffee() -> float:
 
 # --- Intern fatigue --------------------------------------------------------
 
+## Per-frame driver for gradual cheer recovery. Recovery is rate-based, so a
+## larger gap to the target simply takes longer; click-driven fatigue ticks
+## keep running in parallel and are reflected in the bar immediately.
+func _process(delta: float) -> void:
+	if not _fatigue_recovery_active:
+		return
+
+	if intern_fatigue > _fatigue_recovery_target:
+		intern_fatigue = maxf(
+			intern_fatigue - CHEER_RECOVERY_RATE * delta,
+			_fatigue_recovery_target
+		)
+		_sync_efficiency_with_fatigue()
+		SignalBus.fatigue_changed.emit(intern_fatigue)
+
+	if intern_fatigue <= _fatigue_recovery_target:
+		_finish_fatigue_recovery()
+
+
+## Keeps the exhaustion penalty in sync with the current fatigue. Efficiency
+## also recovers gradually: it flips back to 100 % as soon as the bar drops
+## below the maximum.
+func _sync_efficiency_with_fatigue() -> void:
+	var exhausted := intern_fatigue >= FATIGUE_MAX
+	var next_efficiency := EXHAUSTED_EFFICIENCY if exhausted else 1.0
+	if is_equal_approx(intern_efficiency, next_efficiency):
+		return
+
+	intern_efficiency = next_efficiency
+	SignalBus.intern_efficiency_changed.emit(intern_efficiency)
+	if exhausted:
+		SignalBus.intern_exhausted.emit()
+
+
+## Stops the recovery loop and tells the UI to hide the target marker.
+func _finish_fatigue_recovery() -> void:
+	_fatigue_recovery_active = false
+	_fatigue_recovery_target = 0.0
+	SignalBus.fatigue_recovery_changed.emit(0.0, false)
+	SignalBus.fatigue_recovery_finished.emit()
+
+
 ## Advances Alexey's fatigue. Crossing 100 % halves his efficiency and fires
 ## a one-shot exhaustion event for UI feedback.
 func add_fatigue(amount: float) -> void:
 	if amount <= 0.0:
 		return
 
-	var was_exhausted := intern_efficiency < 1.0
 	intern_fatigue = clampf(intern_fatigue + amount, 0.0, FATIGUE_MAX)
 	SignalBus.fatigue_changed.emit(intern_fatigue)
-
-	if intern_fatigue >= FATIGUE_MAX and not was_exhausted:
-		intern_efficiency = EXHAUSTED_EFFICIENCY
-		SignalBus.intern_efficiency_changed.emit(intern_efficiency)
-		SignalBus.intern_exhausted.emit()
+	_sync_efficiency_with_fatigue()
 
 
 ## Called once per second by the fatigue UI timer. Fatigue only grows while
@@ -137,6 +180,30 @@ func tick_fatigue() -> void:
 
 	_fatigue_window_ticks -= 1
 	add_fatigue(FATIGUE_PER_TICK)
+
+
+## True while a cheer is gradually pulling fatigue down to its target.
+func is_fatigue_recovering() -> bool:
+	return _fatigue_recovery_active
+
+
+## Absolute fatigue threshold the active recovery is moving toward.
+func get_fatigue_recovery_target() -> float:
+	return _fatigue_recovery_target
+
+
+## Recovery speed in percentage points per second.
+func get_fatigue_recovery_rate() -> float:
+	return CHEER_RECOVERY_RATE
+
+
+## Estimated seconds until the current target is reached. Recovery is
+## rate-based, so this is (fatigue - target) / rate and grows whenever the
+## player keeps clicking and adding fatigue during recovery.
+func get_fatigue_recovery_remaining() -> float:
+	if not _fatigue_recovery_active:
+		return 0.0
+	return maxf(intern_fatigue - _fatigue_recovery_target, 0.0) / CHEER_RECOVERY_RATE
 
 
 ## How many seconds remain before "Подбодрить" can be used again.
@@ -161,19 +228,22 @@ func get_cheer_cost() -> float:
 	return CHEER_BASE_COST + float(get_cheer_overuse_steps()) * CHEER_COST_STEP
 
 
-## True when Alexey is tired, the player can pay the current price and the
-## cooldown has expired.
+## True when Alexey is tired, the player can pay the current price, the
+## cooldown has expired and another cheer can still lower the threshold.
 func can_cheer() -> bool:
 	return (
 		intern_fatigue > 0.0
+		and not (_fatigue_recovery_active and _fatigue_recovery_target <= 0.0)
 		and coffee_coins >= get_cheer_cost()
 		and get_cheer_cooldown_remaining() <= 0.0
 	)
 
 
-## Manual intervention: "Подбодрить" spends coffee coins, recovers a random
-## 10-30 % of fatigue, restores efficiency and starts the cooldown. Cheering
-## again too soon raises the next price for a while. Returns true on success.
+## Manual intervention: "Подбодрить" spends coffee coins and sets a new
+## fatigue threshold. The bar then slides down to it at CHEER_RECOVERY_RATE,
+## so the duration follows the distance to the target instead of a fixed
+## timer. A second cheer during recovery may only lower the threshold.
+## Starts the cooldown and the overuse surcharge. Returns true on success.
 func cheer_up_intern() -> bool:
 	if not can_cheer():
 		return false
@@ -183,19 +253,19 @@ func cheer_up_intern() -> bool:
 	var rolled_recovery := float(randi_range(
 		int(roundf(CHEER_RECOVERY_MIN)), int(roundf(CHEER_RECOVERY_MAX))
 	))
-	var previous_fatigue := intern_fatigue
-	intern_fatigue = maxf(intern_fatigue - rolled_recovery, 0.0)
-	var recovery := previous_fatigue - intern_fatigue
+	var new_target := maxf(intern_fatigue - rolled_recovery, 0.0)
+	if _fatigue_recovery_active:
+		new_target = minf(_fatigue_recovery_target, new_target)
+
+	_fatigue_recovery_target = new_target
+	_fatigue_recovery_active = true
 	_cheer_ready_at_msec = now_msec + int(roundf(CHEER_COOLDOWN_SEC * 1000.0))
 	_cheer_overuse_steps = mini(get_cheer_overuse_steps() + 1, CHEER_MAX_OVERUSE_STEPS)
 	_cheer_overuse_until_msec = now_msec + int(roundf(CHEER_OVERUSE_WINDOW_SEC * 1000.0))
 	spend_coffee(cost)
 
-	SignalBus.fatigue_changed.emit(intern_fatigue)
-	if intern_efficiency < 1.0:
-		intern_efficiency = 1.0
-		SignalBus.intern_efficiency_changed.emit(intern_efficiency)
-	SignalBus.intern_cheered.emit(recovery, cost)
+	SignalBus.intern_cheered.emit(rolled_recovery, cost, new_target)
+	SignalBus.fatigue_recovery_changed.emit(new_target, true)
 	return true
 
 # --- Pure logic points -----------------------------------------------------
@@ -378,6 +448,8 @@ func _deserialize(data: Dictionary) -> void:
 	intern_fatigue = clampf(float(data.get("intern_fatigue", 0.0)), 0.0, FATIGUE_MAX)
 	intern_efficiency = EXHAUSTED_EFFICIENCY if intern_fatigue >= FATIGUE_MAX else 1.0
 	_fatigue_window_ticks = 0
+	_fatigue_recovery_target = 0.0
+	_fatigue_recovery_active = false
 	_cheer_ready_at_msec = 0
 	_cheer_overuse_steps = 0
 	_cheer_overuse_until_msec = 0
@@ -401,6 +473,8 @@ func reset_state() -> void:
 	intern_fatigue = 0.0
 	intern_efficiency = 1.0
 	_fatigue_window_ticks = 0
+	_fatigue_recovery_target = 0.0
+	_fatigue_recovery_active = false
 	_cheer_ready_at_msec = 0
 	_cheer_overuse_steps = 0
 	_cheer_overuse_until_msec = 0
@@ -419,4 +493,8 @@ func _emit_all_changes() -> void:
 	SignalBus.click_multiplier_changed.emit(click_multiplier)
 	SignalBus.fatigue_changed.emit(intern_fatigue)
 	SignalBus.intern_efficiency_changed.emit(intern_efficiency)
+	SignalBus.fatigue_recovery_changed.emit(
+		_fatigue_recovery_target,
+		_fatigue_recovery_active
+	)
 	SignalBus.scale_changed.emit(current_stage)
