@@ -243,12 +243,13 @@ func get_cheer_cost() -> float:
 	return CHEER_BASE_COST + float(get_cheer_overuse_steps()) * CHEER_COST_STEP
 
 
-## True when Alexey is tired, the player can pay the current price and the
-## cooldown has expired.
+## True when the player can pay the current price and the cooldown has
+## expired. Cheering is allowed even at 0 % fatigue so the permanent recovery
+## upgrade can be bought ahead of time; the current rate stays 0 until the
+## idle wait is over.
 func can_cheer() -> bool:
 	return (
-		intern_fatigue > 0.0
-		and coffee_coins >= get_cheer_cost()
+		coffee_coins >= get_cheer_cost()
 		and get_cheer_cooldown_remaining() <= 0.0
 	)
 
@@ -270,10 +271,11 @@ func cheer_up_intern() -> bool:
 
 	var recovery_active := is_natural_recovery_active()
 	_natural_recovery_active = recovery_active
-	SignalBus.natural_recovery_changed.emit(
-		get_natural_recovery_rate(),
-		recovery_active
-	)
+	if recovery_active:
+		SignalBus.natural_recovery_changed.emit(
+			get_natural_recovery_rate(),
+			true
+		)
 	SignalBus.intern_cheered.emit(
 		CHEER_RECOVERY_BONUS_STEP,
 		cost,

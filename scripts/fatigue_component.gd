@@ -118,7 +118,10 @@ func _apply_warning_state(fatigue: float) -> void:
 func _refresh_recovery_state() -> void:
 	if GameState.intern_fatigue <= 0.0:
 		_recovery_label.text = "РЕГЕНЕРАЦИЯ: —"
-		_recovery_label.tooltip_text = "Алексей полностью бодр"
+		_recovery_label.tooltip_text = (
+			"Алексей полностью бодр. После простоя регенерация: +%s%%/с"
+			% String.num(GameState.get_natural_recovery_potential_rate(), 1)
+		)
 		return
 
 	if GameState.is_natural_recovery_active():
@@ -157,9 +160,6 @@ func _refresh_cheer_state() -> void:
 		_cheer_button.tooltip_text = "Алексей отдыхает, осталось %d с%s" % [
 			int(ceilf(cooldown)), extras
 		]
-	elif GameState.intern_fatigue <= 0.0:
-		_cheer_button.text = "ПОДБОДРИТЬ · %d CR" % cost
-		_cheer_button.tooltip_text = "Алексей и так бодр"
 	elif GameState.coffee_coins < cost_value:
 		_cheer_button.text = "ПОДБОДРИТЬ · %d CR" % cost
 		_cheer_button.tooltip_text = "Нужно %d CR — не хватает кофе-койнов%s" % [
