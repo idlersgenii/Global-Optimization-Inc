@@ -103,7 +103,7 @@ func _connect_signals() -> void:
 	SignalBus.intern_efficiency_changed.connect(_on_multiplier_changed)
 	SignalBus.intern_exhausted.connect(_on_intern_exhausted)
 	SignalBus.intern_cheered.connect(_on_intern_cheered)
-	SignalBus.fatigue_recovery_finished.connect(_on_fatigue_recovery_finished)
+	SignalBus.natural_recovery_changed.connect(_on_natural_recovery_changed)
 	SignalBus.scale_changed.connect(_on_stage_changed)
 	SignalBus.game_saved.connect(_on_game_saved)
 	SignalBus.game_loaded.connect(_on_game_loaded)
@@ -303,17 +303,24 @@ func _on_intern_exhausted() -> void:
 	_push_ticker("УСТАЛОСТЬ 100%: АЛЕКСЕЙ РАБОТАЕТ ВПОЛСИЛЫ")
 
 
-func _on_intern_cheered(_recovery: float, cost: float, target: float) -> void:
+func _on_intern_cheered(boost: float, cost: float, natural_rate: float) -> void:
 	_set_status(
-		"АЛЕКСЕЙ ВЗБОДРЁН: ВОССТАНОВЛЕНИЕ ДО %d%%, -%d CR"
-		% [int(roundf(target)), int(roundf(cost))]
+		"АЛЕКСЕЙ ВЗБОДРЁН: +%s%%/С К РЕГЕНЕРАЦИИ, -%d CR"
+		% [String.num(boost, 1), int(roundf(cost))]
 	)
-	_push_ticker("ПЕРЕРЫВ: УСТАЛОСТЬ СНИЗИТСЯ ДО %d%%" % int(roundf(target)))
+	_push_ticker(
+		"ПЕРЕРЫВ: РЕГЕНЕРАЦИЯ +%s%%/С ЗА %d CR"
+		% [String.num(natural_rate, 1), int(roundf(cost))]
+	)
 
 
-func _on_fatigue_recovery_finished() -> void:
-	_set_status("АЛЕКСЕЙ ВОССТАНОВИЛСЯ: УСТАЛОСТЬ %d%%" % int(roundf(GameState.intern_fatigue)))
-	_push_ticker("ПЕРЕРЫВ ОКОНЧЕН: АЛЕКСЕЙ СНОВА В СТРОЮ")
+func _on_natural_recovery_changed(rate: float, active: bool) -> void:
+	if active:
+		_set_status("АЛЕКСЕЙ ОТДЫХАЕТ: РЕГЕНЕРАЦИЯ +%s%%/С" % String.num(rate, 1))
+		_push_ticker("ПАССИВНОЕ ВОССТАНОВЛЕНИЕ: +%s%%/С" % String.num(rate, 1))
+	elif GameState.intern_fatigue <= 0.0:
+		_set_status("АЛЕКСЕЙ ОТДОХНУЛ: УСТАЛОСТЬ 0%")
+		_push_ticker("РЕГЕНЕРАЦИЯ ЗАВЕРШЕНА: АЛЕКСЕЙ ПОЛОН СИЛ")
 
 
 func _on_stage_changed(new_stage: int) -> void:

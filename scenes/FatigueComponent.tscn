@@ -30,15 +30,6 @@ max_value = 100.0
 show_percentage = false
 theme_type_variation = &"FatigueBar"
 
-[node name="TargetMarker" type="ColorRect" parent="Layout/FatigueBar"]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_right = 3.0
-offset_bottom = 16.0
-mouse_filter = 2
-color = Color(0.08, 0.11, 0.09, 1)
-
 [node name="FatiguePercent" type="Label" parent="Layout"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(44, 0)
@@ -51,6 +42,12 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"FatigueLabel"
 text = "ЭФФЕКТИВНОСТЬ: 100%"
+
+[node name="RecoveryLabel" type="Label" parent="Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "РЕГЕНЕРАЦИЯ: —"
 
 [node name="Spacer" type="Control" parent="Layout"]
 layout_mode = 2
@@ -77,7 +74,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 26)
 layout_mode = 2
 focus_mode = 0
-tooltip_text = "Восстановить 10–30% усталости за 5 CR. Скорость 5%/с"
+tooltip_text = "Повысить естественное восстановление на +1%/с за 5 CR"
 text = "ПОДБОДРИТЬ · 5 CR"
 
 [node name="FatigueTimer" type="Timer" parent="."]
