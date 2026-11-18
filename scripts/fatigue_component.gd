@@ -3,8 +3,8 @@ extends PanelContainer
 ##
 ## The component owns only presentation and the one-second Timer. Fatigue
 ## mutations live in GameState and come back through SignalBus, so the UI
-## never polls game state directly. Fatigue only grows during the short
-## post-click window that GameState opens on every manual grind; the base
+## never polls game state directly. Every manual grind click adds a small flat
+## amount of fatigue and opens a short window of extra fatigue ticks; the base
 ## recovery returns after a longer idle period, while a temporary cheer buff
 ## keeps recovering fatigue even during active clicking.
 
@@ -56,7 +56,7 @@ func _on_cheer_state_timeout() -> void:
 
 func _on_fatigue_changed(new_value: float) -> void:
 	_fatigue_bar.value = new_value
-	_fatigue_percent.text = "%d%%" % int(roundf(new_value))
+	_fatigue_percent.text = "%s%%" % String.num(new_value, 1)
 	_apply_warning_state(new_value)
 	_refresh_cheer_state()
 
@@ -93,7 +93,7 @@ func _on_game_reset() -> void:
 
 func _refresh_from_state() -> void:
 	_fatigue_bar.value = GameState.intern_fatigue
-	_fatigue_percent.text = "%d%%" % int(roundf(GameState.intern_fatigue))
+	_fatigue_percent.text = "%s%%" % String.num(GameState.intern_fatigue, 1)
 	_efficiency_label.text = "ЭФФЕКТИВНОСТЬ: %d%%" % int(
 		roundf(GameState.intern_efficiency * 100.0)
 	)

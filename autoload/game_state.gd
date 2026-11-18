@@ -14,6 +14,9 @@ const DEFAULT_SAVE_SLOT: StringName = &"default"
 
 const FATIGUE_MAX: float = 100.0
 const FATIGUE_PER_TICK: float = 1.0
+## Flat fatigue added by every manual grind click, on top of the post-click
+## fatigue window. Upgrades will raise this value later.
+const FATIGUE_PER_CLICK: float = 0.1
 ## Fatigue only grows for this many one-second ticks after a grind click.
 ## Re-clicking during the window restarts the countdown instead of stacking it.
 const FATIGUE_CLICK_WINDOW_TICKS: int = 5
@@ -116,8 +119,9 @@ func _emit_coffee_changed() -> void:
 # --- Manual grind ----------------------------------------------------------
 
 ## Brews one cup on a manual click: credits `click_multiplier` coffee coins,
-## increments the cup counter and broadcasts the result through SignalBus.
-## Returns the reward so the UI can show floating feedback.
+## adds a flat FATIGUE_PER_CLICK fatigue, increments the cup counter and
+## broadcasts the result through SignalBus. Returns the reward so the UI can
+## show floating feedback.
 func grind_coffee() -> float:
 	register_activity()
 	var reward := maxf(click_multiplier * intern_efficiency, 0.0)
@@ -126,8 +130,10 @@ func grind_coffee() -> float:
 
 	coffee_coins += reward
 	coffee_cups += 1
-	# Each click restarts the fatigue window; clicks never stack extra ticks.
+	# Each click adds a small flat amount of fatigue and restarts the
+	# post-click window; clicks never stack extra window ticks.
 	_fatigue_window_ticks = FATIGUE_CLICK_WINDOW_TICKS
+	add_fatigue(FATIGUE_PER_CLICK)
 	SignalBus.coffee_earned.emit(reward)
 	SignalBus.grind_boost_requested.emit(reward)
 	SignalBus.coffee_cups_changed.emit(coffee_cups)
@@ -241,8 +247,9 @@ func _sync_efficiency_with_fatigue() -> void:
 		SignalBus.intern_exhausted.emit()
 
 
-## Called once per second by the fatigue UI timer. Fatigue only grows while
-## a post-click window is active, so an idle player never gets tired.
+## Called once per second by the fatigue UI timer. Window fatigue only grows
+## while a post-click window is active, so an idle player never gets tired.
+## The flat per-click fatigue is applied immediately in grind_coffee().
 func tick_fatigue() -> void:
 	if _fatigue_window_ticks <= 0:
 		return
