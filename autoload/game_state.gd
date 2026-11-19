@@ -9,7 +9,7 @@ extends Node
 ## decides whether to call `load_game()` when `has_save()` is true.
 
 const SAVE_PATH: String = "user://savegame.json"
-const SAVE_VERSION: int = 2
+const SAVE_VERSION: int = 3
 const DEFAULT_SAVE_SLOT: StringName = &"default"
 
 const FATIGUE_MAX: float = 100.0
@@ -41,6 +41,10 @@ const CHEER_COOLDOWN_SEC: float = 5.0
 ## after the player lets Alexey rest for this long.
 const CHEER_OVERUSE_WINDOW_SEC: float = 20.0
 const EXHAUSTED_EFFICIENCY: float = 0.5
+## First hired intern (autoclicker). Every hire costs
+## INTERN_BASE_COST * INTERN_COST_GROWTH^n, where n is the current staff size.
+const INTERN_BASE_COST: float = 25.0
+const INTERN_COST_GROWTH: float = 1.15
 
 ## Fiat credits, called "coffee coins" in the game.
 var coffee_coins: float = 0.0
@@ -56,6 +60,9 @@ var click_multiplier: float = 1.0
 ## One of the values in SignalBus.GameScale.
 var current_stage: int = SignalBus.GameScale.CAFE
 
+## Number of hired interns automating manual grinds.
+var interns_hired: int = 0
+
 ## Intern Alexey: fatigue fills after clicks; at 100 % his efficiency halves.
 var intern_fatigue: float = 0.0
 var intern_efficiency: float = 1.0
@@ -65,7 +72,7 @@ var _cheer_buff_until_msec: int = 0
 
 ## One-second ticks left in the post-click fatigue window.
 var _fatigue_window_ticks: int = 0
-## Engine time (msec) of the last manual grind click.
+## Engine time (msec) of the last grind click, manual or automated.
 var _last_activity_msec: int = 0
 ## Cached total-recovery state, used to emit edge-triggered changes.
 var _natural_recovery_active: bool = false
@@ -79,6 +86,7 @@ var _cheer_overuse_until_msec: int = 0
 
 func _ready() -> void:
 	_last_activity_msec = Time.get_ticks_msec()
+	SignalBus.intern_auto_grind_requested.connect(_on_intern_auto_grind_requested)
 
 
 # --- Coffee coins ----------------------------------------------------------
@@ -140,6 +148,48 @@ func grind_coffee() -> float:
 	_emit_coffee_changed()
 	return reward
 
+# --- Intern hiring and automation ------------------------------------------
+
+## Current price for the next intern: base cost scaled exponentially by the
+## number of interns already on staff. Rounded to cents for UI consistency.
+func get_intern_hire_cost() -> float:
+	var raw_cost := INTERN_BASE_COST * pow(INTERN_COST_GROWTH, interns_hired)
+	return roundf(raw_cost * 100.0) / 100.0
+
+
+## True when the player can afford the next intern.
+func can_hire_intern() -> bool:
+	return coffee_coins >= get_intern_hire_cost()
+
+
+## Adds one intern to the staff. Hiring itself is the only thing the UI calls
+## directly; the automation cycle is owned by the InternManager autoload.
+func hire_intern() -> bool:
+	if not can_hire_intern():
+		return false
+
+	var cost := get_intern_hire_cost()
+	if not spend_coffee(cost):
+		return false
+
+	interns_hired += 1
+	SignalBus.intern_hire_state_changed.emit(interns_hired, get_intern_hire_cost())
+	SignalBus.employee_hired.emit(SignalBus.INTERN_ALEXEY_ID)
+	return true
+
+
+## InternManager only requests grinds through SignalBus; the actual economy
+## mutation stays in GameState so every balance change still has one owner.
+func _on_intern_auto_grind_requested(employee_id: StringName, count: int) -> void:
+	if employee_id != SignalBus.INTERN_ALEXEY_ID or count <= 0:
+		return
+
+	var total_reward := 0.0
+	for _index in range(count):
+		total_reward += grind_coffee()
+	if total_reward > 0.0:
+		SignalBus.intern_auto_grind_performed.emit(total_reward)
+
 # --- Intern fatigue --------------------------------------------------------
 
 ## Per-frame passive recovery. The base portion only runs after
@@ -162,8 +212,8 @@ func _process(delta: float) -> void:
 	_sync_efficiency_with_fatigue()
 
 
-## Called on every manual grind click. Activity only pauses the base passive
-## recovery; the temporary cheer buff keeps working through manual labor.
+## Called on every grind click, manual or automated. Activity only pauses the
+## base passive recovery; the temporary cheer buff keeps working through labor.
 func register_activity() -> void:
 	_last_activity_msec = Time.get_ticks_msec()
 
@@ -484,6 +534,7 @@ func to_dict() -> Dictionary[String, Variant]:
 		"intern_efficiency": intern_efficiency,
 		"cheer_buff_stacks": _cheer_buff_stacks,
 		"cheer_buff_remaining_sec": get_cheer_buff_remaining(),
+		"interns_hired": interns_hired,
 		"current_stage": current_stage,
 	}
 
@@ -535,6 +586,7 @@ func _deserialize(data: Dictionary) -> void:
 	_cheer_ready_at_msec = 0
 	_cheer_overuse_steps = 0
 	_cheer_overuse_until_msec = 0
+	interns_hired = maxi(int(data.get("interns_hired", 0)), 0)
 	current_stage = clampi(
 		int(data.get("current_stage", SignalBus.GameScale.CAFE)),
 		SignalBus.GameScale.CAFE,
@@ -563,6 +615,7 @@ func reset_state() -> void:
 	_cheer_ready_at_msec = 0
 	_cheer_overuse_steps = 0
 	_cheer_overuse_until_msec = 0
+	interns_hired = 0
 	current_stage = SignalBus.GameScale.CAFE
 
 	_emit_all_changes()
@@ -584,4 +637,5 @@ func _emit_all_changes() -> void:
 		_last_recovery_rate,
 		_natural_recovery_active
 	)
+	SignalBus.intern_hire_state_changed.emit(interns_hired, get_intern_hire_cost())
 	SignalBus.scale_changed.emit(current_stage)

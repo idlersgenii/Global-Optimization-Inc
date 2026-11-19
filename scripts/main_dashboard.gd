@@ -51,6 +51,11 @@ const STAGE_SHORT_NAMES: Dictionary[int, String] = {
 @onready var _morale_percent: Label = %MoralePercent
 @onready var _oxygen_bar: ProgressBar = %OxygenBar
 @onready var _oxygen_percent: Label = %OxygenPercent
+@onready var _intern_state_label: Label = %InternStateLabel
+@onready var _intern_rate_label: Label = %InternRateLabel
+@onready var _intern_countdown_label: Label = %InternCountdownLabel
+@onready var _intern_progress: ProgressBar = %InternProgress
+@onready var _hire_intern_button: Button = %HireInternButton
 @onready var _grind_hint: Label = %GrindHint
 @onready var _grind_button: Button = %GrindButton
 @onready var _cups_value: Label = %CupsValue
@@ -105,6 +110,10 @@ func _connect_signals() -> void:
 	SignalBus.intern_exhausted.connect(_on_intern_exhausted)
 	SignalBus.intern_cheered.connect(_on_intern_cheered)
 	SignalBus.natural_recovery_changed.connect(_on_natural_recovery_changed)
+	SignalBus.intern_hire_state_changed.connect(_on_intern_hire_state_changed)
+	SignalBus.intern_automation_tick.connect(_on_intern_automation_tick)
+	SignalBus.intern_auto_grind_performed.connect(_on_intern_auto_grind_performed)
+	SignalBus.employee_hired.connect(_on_employee_hired)
 	SignalBus.scale_changed.connect(_on_stage_changed)
 	SignalBus.game_saved.connect(_on_game_saved)
 	SignalBus.game_loaded.connect(_on_game_loaded)
@@ -115,6 +124,7 @@ func _connect_controls() -> void:
 	%SaveButton.pressed.connect(_on_save_pressed)
 	%LoadButton.pressed.connect(_on_load_pressed)
 	_grind_button.pressed.connect(_on_grind_pressed)
+	_hire_intern_button.pressed.connect(_on_hire_intern_pressed)
 	%MinimizeButton.pressed.connect(_on_minimize_pressed)
 	%MaximizeButton.pressed.connect(_on_maximize_pressed)
 	%CloseButton.pressed.connect(_on_close_pressed)
@@ -286,6 +296,8 @@ func _refresh_all() -> void:
 	_oxygen_bar.value = 21.0
 	_oxygen_percent.text = "21.0%"
 
+	_refresh_intern_hire_state()
+
 
 func _on_balance_changed(_new_amount: float) -> void:
 	_refresh_all()
@@ -324,6 +336,86 @@ func _on_natural_recovery_changed(rate: float, active: bool) -> void:
 		_set_status("АЛЕКСЕЙ ОТДОХНУЛ: УСТАЛОСТЬ 0%")
 		_push_ticker("РЕГЕНЕРАЦИЯ ЗАВЕРШЕНА: АЛЕКСЕЙ ПОЛОН СИЛ")
 	_recovery_was_active = active
+
+
+func _refresh_intern_hire_state() -> void:
+	var interns := GameState.interns_hired
+	var cost := GameState.get_intern_hire_cost()
+	var interval := String.num(InternManager.INTERN_AUTO_CLICK_INTERVAL_SEC, 1)
+	var growth_percent := int(roundf((GameState.INTERN_COST_GROWTH - 1.0) * 100.0))
+
+	_intern_state_label.text = (
+		"СТАЖЁР НЕ НАНЯТ" if interns == 0 else "В ШТАТЕ: %d" % interns
+	)
+	if interns <= 1:
+		_intern_rate_label.text = "АВТОКЛИК: 1 ПОМОЛ / %s С" % interval
+	else:
+		_intern_rate_label.text = "АВТОКЛИК: ×%d / %s С" % [interns, interval]
+
+	if interns == 0:
+		_hire_intern_button.text = "НАНЯТЬ СТАЖЁРА · %s CR" % _format_number(cost)
+	else:
+		_hire_intern_button.text = "НАНЯТЬ ЕЩЁ · %s CR" % _format_number(cost)
+	_hire_intern_button.disabled = not GameState.can_hire_intern()
+
+	var tooltip := (
+		"%s: +1 автопомол каждые %s с. Цена: %s CR "
+		+ "(растёт на %d%% с каждым стажёром)."
+	) % [
+		"Нанять стажёра Алексея" if interns == 0 else "Нанять ещё одного стажёра",
+		interval,
+		_format_number(cost),
+		growth_percent,
+	]
+	if not GameState.can_hire_intern():
+		tooltip += " Не хватает кофе-коинов."
+	_hire_intern_button.tooltip_text = tooltip
+
+	_update_cell(Vector2i(3, 7), "НЕ НАНЯТ" if interns == 0 else "АВТОКЛИК ×%d" % interns)
+
+	if interns == 0:
+		_intern_countdown_label.text = "АВТОКЛИК ВЫКЛЮЧЕН"
+		_intern_progress.max_value = InternManager.INTERN_AUTO_CLICK_INTERVAL_SEC
+		_intern_progress.value = 0.0
+
+
+func _on_intern_hire_state_changed(_interns_hired: int, _hire_cost: float) -> void:
+	_refresh_intern_hire_state()
+
+
+func _on_intern_automation_tick(
+	interns_hired: int, seconds_left: float, interval: float
+) -> void:
+	if interns_hired <= 0:
+		_intern_countdown_label.text = "АВТОКЛИК ВЫКЛЮЧЕН"
+		_intern_progress.max_value = maxf(interval, 0.001)
+		_intern_progress.value = 0.0
+		return
+
+	_intern_countdown_label.text = (
+		"СЛЕДУЮЩИЙ ПОМОЛ: %s С" % String.num(seconds_left, 1)
+	)
+	_intern_progress.max_value = maxf(interval, 0.001)
+	_intern_progress.value = seconds_left
+
+
+func _on_intern_auto_grind_performed(_reward: float) -> void:
+	_flash_coffee_cell()
+
+
+func _on_employee_hired(employee_id: StringName) -> void:
+	if employee_id != SignalBus.INTERN_ALEXEY_ID:
+		return
+
+	var count := GameState.interns_hired
+	var interval := String.num(InternManager.INTERN_AUTO_CLICK_INTERVAL_SEC, 1)
+	if count <= 1:
+		_set_status("СТАЖЁР АЛЕКСЕЙ НАНЯТ: АВТОПОМОЛ КАЖДЫЕ %s С" % interval)
+		_push_ticker("HR: СТАЖЁР АЛЕКСЕЙ ОФОРМЛЕН. РУЧНОЙ ТРУД ОПТИМИЗИРОВАН.")
+	else:
+		_set_status("НАНЯТ ЕЩЁ ОДИН СТАЖЁР: ВСЕГО %d" % count)
+		_push_ticker("HR: АВТОМАТИЗАЦИЯ УСИЛЕНА. В ШТАТЕ: %d." % count)
+	_refresh_intern_hire_state()
 
 
 func _on_stage_changed(new_stage: int) -> void:
@@ -385,6 +477,17 @@ func _on_grind_pressed() -> void:
 	_play_click_sound()
 	_set_status("ПОМОЛ УСКОРЕН. БАЛАНС: %s CR" % _format_number(GameState.coffee_coins))
 	_push_ticker("РУЧНОЙ ПОМОЛ: +%s CR" % _format_number(reward))
+
+
+func _on_hire_intern_pressed() -> void:
+	if GameState.hire_intern():
+		return
+
+	_set_status(
+		"НАЙМ НЕДОСТУПЕН: НУЖНО %s CR"
+		% _format_number(GameState.get_intern_hire_cost())
+	)
+	_push_ticker("HR: ЗАЯВКА НА НАЙМ ОТКЛОНЕНА. БЮДЖЕТ НЕ СОГЛАСОВАН.")
 
 
 func _on_menu_pressed(title: String) -> void:

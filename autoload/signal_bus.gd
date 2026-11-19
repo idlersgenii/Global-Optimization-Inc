@@ -23,6 +23,10 @@ enum HRSeverity {
 	CRITICAL = 2,
 }
 
+# --- Shared identifiers ----------------------------------------------------
+
+const INTERN_ALEXEY_ID: StringName = &"intern_alexey"
+
 # --- Currency and economy --------------------------------------------------
 
 signal coffee_changed(new_amount: float)
@@ -49,6 +53,11 @@ signal natural_recovery_changed(rate: float, active: bool)
 signal employee_hired(employee_id: StringName)
 signal employee_fired(employee_id: StringName)
 signal employee_state_changed(employee_id: StringName, state: StringName)
+signal intern_hire_state_changed(interns_hired: int, hire_cost: float)
+## Emitted by InternManager; GameState turns it into real grinds.
+signal intern_auto_grind_requested(employee_id: StringName, count: int)
+signal intern_auto_grind_performed(reward: float)
+signal intern_automation_tick(interns_hired: int, seconds_left: float, interval: float)
 
 # --- Upgrades --------------------------------------------------------------
 

@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 MCPRuntimeServer="*res://addons/godot_mcp_toolkit/runtime/mcp_runtime_server.gd"
 SignalBus="*res://autoload/signal_bus.gd"
 GameState="*res://autoload/game_state.gd"
+InternManager="*res://autoload/InternManager.gd"
 
 [display]
 
