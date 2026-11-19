@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://cwohs1f05l3w2" path="res://scripts/main_dashboard.gd" id="1_script"]
 [ext_resource type="Theme" path="res://assets/themes/spreadsheet_theme.tres" id="2_theme"]
 [ext_resource type="PackedScene" path="res://scenes/FatigueComponent.tscn" id="3_fatigue"]
-[ext_resource type="Texture2D" path="res://alexei.png" id="4_alexei"]
+[ext_resource type="Texture2D" path="res://assets/portraits/alexey.png" id="4_alexey"]
 
 [node name="MainDashboard" type="Control" unique_id=1658704504]
 layout_mode = 3
@@ -446,7 +446,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 texture_filter = 1
-texture = ExtResource("4_alexei")
+texture = ExtResource("4_alexey")
 expand_mode = 1
 stretch_mode = 5
 
