@@ -312,8 +312,9 @@ func _on_multiplier_changed(_new_multiplier: float) -> void:
 
 
 func _on_intern_exhausted() -> void:
-	_set_status("АЛЕКСЕЙ ПЕРЕУТОМЛЁН: ЭФФЕКТИВНОСТЬ 50%")
-	_push_ticker("УСТАЛОСТЬ 100%: АЛЕКСЕЙ РАБОТАЕТ ВПОЛСИЛЫ")
+	var percent := int(roundf(GameState.intern_efficiency * 100.0))
+	_set_status("АЛЕКСЕЙ ПЕРЕУТОМЛЁН: ЭФФЕКТИВНОСТЬ %d%%" % percent)
+	_push_ticker("УСТАЛОСТЬ 100%%: ЭФФЕКТИВНОСТЬ %d%%" % percent)
 
 
 func _on_intern_cheered(_boost: float, cost: float, buff_rate: float) -> void:

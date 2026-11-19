@@ -40,7 +40,15 @@ const CHEER_COOLDOWN_SEC: float = 5.0
 ## Cheers closer than this window count as overuse; the surcharge expires
 ## after the player lets Alexey rest for this long.
 const CHEER_OVERUSE_WINDOW_SEC: float = 20.0
-const EXHAUSTED_EFFICIENCY: float = 0.5
+## Efficiency steps as fatigue grows. Each entry is
+## (minimum fatigue %, efficiency multiplier); the first matching tier wins.
+const EFFICIENCY_TIERS: Array[Vector2] = [
+	Vector2(98.0, 0.10),
+	Vector2(95.0, 0.25),
+	Vector2(90.0, 0.50),
+	Vector2(85.0, 0.65),
+	Vector2(80.0, 0.85),
+]
 ## First hired intern (autoclicker). Every hire costs
 ## INTERN_BASE_COST * INTERN_COST_GROWTH^n, where n is the current staff size.
 const INTERN_BASE_COST: float = 25.0
@@ -63,7 +71,7 @@ var current_stage: int = SignalBus.GameScale.CAFE
 ## Number of hired interns automating manual grinds.
 var interns_hired: int = 0
 
-## Intern Alexey: fatigue fills after clicks; at 100 % his efficiency halves.
+## Intern Alexey: fatigue fills after clicks; efficiency drops in tiers.
 var intern_fatigue: float = 0.0
 var intern_efficiency: float = 1.0
 ## Temporary stacking regeneration buff bought with "Подбодрить".
@@ -192,9 +200,10 @@ func _on_intern_auto_grind_requested(employee_id: StringName, count: int) -> voi
 
 # --- Intern fatigue --------------------------------------------------------
 
-## Per-frame passive recovery. The base portion only runs after
-## NATURAL_RECOVERY_IDLE_SEC without manual work, while the temporary cheer
-## buff keeps recovering fatigue even during active clicking.
+## Per-frame passive recovery. The base portion runs after an idle period
+## before the first hire; once interns are on staff it stays on permanently,
+## because automation keeps resetting the idle timer. The temporary cheer buff
+## keeps recovering fatigue even during active clicking.
 func _process(delta: float) -> void:
 	_expire_cheer_buff_if_needed()
 	var rate := get_natural_recovery_rate()
@@ -218,9 +227,13 @@ func register_activity() -> void:
 	_last_activity_msec = Time.get_ticks_msec()
 
 
-## Base passive recovery: zero until the player has been idle long enough.
+## Base passive recovery: before the first hire it only starts after
+## NATURAL_RECOVERY_IDLE_SEC of rest. Hired interns let Alexey recover
+## continuously, since automation would otherwise pause recovery forever.
 func get_base_recovery_rate() -> float:
-	if intern_fatigue <= 0.0 or get_idle_seconds_remaining() > 0.0:
+	if intern_fatigue <= 0.0:
+		return 0.0
+	if interns_hired <= 0 and get_idle_seconds_remaining() > 0.0:
 		return 0.0
 	return NATURAL_RECOVERY_BASE
 
@@ -272,29 +285,37 @@ func _expire_cheer_buff_if_needed() -> void:
 		_cheer_buff_until_msec = 0
 
 
-## Advances Alexey's fatigue. Crossing 100 % halves his efficiency and fires
-## a one-shot exhaustion event for UI feedback.
+## Advances Alexey's fatigue. Crossing 100 % fires a one-shot exhaustion event
+## for UI feedback; the efficiency penalty changes earlier, at fatigue tiers.
 func add_fatigue(amount: float) -> void:
 	if amount <= 0.0:
 		return
 
+	var was_exhausted := intern_fatigue >= FATIGUE_MAX
 	intern_fatigue = clampf(intern_fatigue + amount, 0.0, FATIGUE_MAX)
 	SignalBus.fatigue_changed.emit(intern_fatigue)
 	_sync_efficiency_with_fatigue()
+	if not was_exhausted and intern_fatigue >= FATIGUE_MAX:
+		SignalBus.intern_exhausted.emit()
 
 
-## Keeps the exhaustion penalty in sync with the current fatigue. Efficiency
-## returns to 100 % as soon as natural recovery drops the bar below maximum.
+## Efficiency multiplier for the given fatigue. Tiers make the intern slower
+## in steps instead of applying a single penalty at 100 %.
+func get_efficiency_for_fatigue(fatigue: float) -> float:
+	for tier in EFFICIENCY_TIERS:
+		if fatigue >= tier.x:
+			return tier.y
+	return 1.0
+
+
+## Keeps the tiered efficiency penalty in sync with the current fatigue.
 func _sync_efficiency_with_fatigue() -> void:
-	var exhausted := intern_fatigue >= FATIGUE_MAX
-	var next_efficiency := EXHAUSTED_EFFICIENCY if exhausted else 1.0
+	var next_efficiency := get_efficiency_for_fatigue(intern_fatigue)
 	if is_equal_approx(intern_efficiency, next_efficiency):
 		return
 
 	intern_efficiency = next_efficiency
 	SignalBus.intern_efficiency_changed.emit(intern_efficiency)
-	if exhausted:
-		SignalBus.intern_exhausted.emit()
 
 
 ## Called once per second by the fatigue UI timer. Window fatigue only grows
@@ -554,7 +575,7 @@ func _deserialize(data: Dictionary) -> void:
 	production_multiplier = maxf(float(data.get("production_multiplier", 1.0)), 0.0)
 	click_multiplier = maxf(float(data.get("click_multiplier", 1.0)), 0.0)
 	intern_fatigue = clampf(float(data.get("intern_fatigue", 0.0)), 0.0, FATIGUE_MAX)
-	intern_efficiency = EXHAUSTED_EFFICIENCY if intern_fatigue >= FATIGUE_MAX else 1.0
+	intern_efficiency = get_efficiency_for_fatigue(intern_fatigue)
 	_cheer_buff_stacks = 0
 	_cheer_buff_until_msec = 0
 	if loaded_version >= 2:

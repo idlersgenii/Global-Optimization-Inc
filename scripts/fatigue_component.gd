@@ -5,8 +5,9 @@ extends PanelContainer
 ## mutations live in GameState and come back through SignalBus, so the UI
 ## never polls game state directly. Every manual grind click adds a small flat
 ## amount of fatigue and opens a short window of extra fatigue ticks; the base
-## recovery returns after a longer idle period, while a temporary cheer buff
-## keeps recovering fatigue even during active clicking.
+## recovery works continuously once interns are hired, otherwise it returns
+## after an idle period. A temporary cheer buff keeps recovering fatigue even
+## during active clicking.
 
 @onready var _fatigue_bar: ProgressBar = %FatigueBar
 @onready var _fatigue_percent: Label = %FatiguePercent
