@@ -134,10 +134,10 @@ func _emit_coffee_changed() -> void:
 
 # --- Manual grind ----------------------------------------------------------
 
-## Brews one cup on a manual click: credits `click_multiplier` coffee coins,
-## adds a flat FATIGUE_PER_CLICK fatigue, increments the cup counter and
-## broadcasts the result through SignalBus. Returns the reward so the UI can
-## show floating feedback.
+## Brews and sells one cup: credits `click_multiplier` coffee coins, adds a
+## flat FATIGUE_PER_CLICK fatigue, increments the cup counter and broadcasts
+## the result through SignalBus. Returns the reward so the UI can show
+## floating feedback. Used by both manual clicks and intern automation.
 func grind_coffee() -> float:
 	register_activity()
 	var reward := maxf(click_multiplier * intern_efficiency, 0.0)
@@ -151,6 +151,7 @@ func grind_coffee() -> float:
 	_fatigue_window_ticks = FATIGUE_CLICK_WINDOW_TICKS
 	add_fatigue(FATIGUE_PER_CLICK)
 	SignalBus.coffee_earned.emit(reward)
+	SignalBus.coffee_sold.emit(reward)
 	SignalBus.grind_boost_requested.emit(reward)
 	SignalBus.coffee_cups_changed.emit(coffee_cups)
 	_emit_coffee_changed()

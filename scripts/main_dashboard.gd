@@ -13,13 +13,6 @@ const CELL_HEIGHT: float = 26.0
 const CELL_WIDTHS: Array[float] = [170.0, 150.0, 74.0, 96.0, 70.0, 70.0]
 const TICKER_LIMIT: int = 4
 const CUP_COUNTER_DIGITS: int = 4
-const CLICK_SOUNDS: Array[AudioStream] = [
-	preload("res://assets/audio/keyboard_click1.wav"),
-	preload("res://assets/audio/keyboard_click2.wav"),
-	preload("res://assets/audio/keyboard_click3.wav"),
-	preload("res://assets/audio/keyboard_click4.wav"),
-]
-const SAVE_SOUND: AudioStream = preload("res://assets/audio/keyboard_longclicks1.wav")
 
 const CELL_COFFEE: Vector2i = Vector2i(1, 2)
 const CELL_LOGIC: Vector2i = Vector2i(1, 3)
@@ -59,8 +52,6 @@ const STAGE_SHORT_NAMES: Dictionary[int, String] = {
 @onready var _grind_hint: Label = %GrindHint
 @onready var _grind_button: Button = %GrindButton
 @onready var _cups_value: Label = %CupsValue
-@onready var _click_audio: AudioStreamPlayer = %ClickAudio
-@onready var _save_audio: AudioStreamPlayer = %SaveAudio
 @onready var _ticker_label: Label = %TickerLabel
 @onready var _status_message: Label = %StatusMessageLabel
 @onready var _save_status: Label = %SaveStatusLabel
@@ -445,7 +436,7 @@ func _on_game_reset() -> void:
 func _on_save_pressed() -> void:
 	var error := GameState.save_game()
 	if error == OK:
-		_play_save_sound()
+		SignalBus.sound_requested.emit(&"keyboard_save")
 		_set_status("СОСТОЯНИЕ СОХРАНЕНО")
 		_push_ticker("СЕЙВ ЗАПИСАН НА ДИСК")
 	else:
@@ -475,7 +466,7 @@ func _on_grind_pressed() -> void:
 		return
 
 	_flash_coffee_cell()
-	_play_click_sound()
+	SignalBus.sound_requested.emit(&"keyboard_click")
 	_set_status("ПОМОЛ УСКОРЕН. БАЛАНС: %s CR" % _format_number(GameState.coffee_coins))
 	_push_ticker("РУЧНОЙ ПОМОЛ: +%s CR" % _format_number(reward))
 
@@ -512,27 +503,6 @@ func _on_maximize_pressed() -> void:
 func _on_close_pressed() -> void:
 	_set_status("ЗАКРЫТИЕ ЗАПРЕЩЕНО ДО ЗАВЕРШЕНИЯ ОПТИМИЗАЦИИ")
 	_push_ticker("ЗАПРОС НА ЗАКРЫТИЕ ОТКЛОНЁН СИСТЕМОЙ")
-
-
-# --- Feedback --------------------------------------------------------------
-
-func _play_click_sound() -> void:
-	if CLICK_SOUNDS.is_empty():
-		return
-	_click_audio.stream = CLICK_SOUNDS[randi_range(0, CLICK_SOUNDS.size() - 1)]
-	_click_audio.pitch_scale = randf_range(0.94, 1.06)
-	_click_audio.play()
-
-
-func _play_save_sound() -> void:
-	_save_audio.stream = SAVE_SOUND
-	_save_audio.play(randf_range(0.0, 4.5))
-	# The recording is a long typing loop; keep only a short burst on save.
-	get_tree().create_timer(1.0).timeout.connect(_stop_save_sound)
-
-
-func _stop_save_sound() -> void:
-	_save_audio.stop()
 
 
 # --- Utilities -------------------------------------------------------------

@@ -32,6 +32,8 @@ const INTERN_ALEXEY_ID: StringName = &"intern_alexey"
 signal coffee_changed(new_amount: float)
 signal coffee_earned(amount: float)
 signal coffee_spent(amount: float)
+## A brewed cup was sold and paid for; audio/UI may react with sale feedback.
+signal coffee_sold(amount: float)
 signal coffee_cups_changed(new_count: int)
 signal pure_logic_changed(new_amount: float)
 signal metaverse_shares_changed(new_amount: float)
@@ -58,6 +60,11 @@ signal intern_hire_state_changed(interns_hired: int, hire_cost: float)
 signal intern_auto_grind_requested(employee_id: StringName, count: int)
 signal intern_auto_grind_performed(reward: float)
 signal intern_automation_tick(interns_hired: int, seconds_left: float, interval: float)
+
+# --- Audio -----------------------------------------------------------------
+
+## Request playback by string key; AudioManager owns the actual players.
+signal sound_requested(sound_key: StringName)
 
 # --- Upgrades --------------------------------------------------------------
 
