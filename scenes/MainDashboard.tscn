@@ -4,6 +4,7 @@
 [ext_resource type="Theme" path="res://assets/themes/spreadsheet_theme.tres" id="2_theme"]
 [ext_resource type="PackedScene" path="res://scenes/FatigueComponent.tscn" id="3_fatigue"]
 [ext_resource type="Texture2D" path="res://assets/portraits/alexey.png" id="4_alexey"]
+[ext_resource type="PackedScene" path="res://scenes/LogTicker.tscn" id="5_log_ticker"]
 
 [node name="MainDashboard" type="Control" unique_id=1658704504]
 layout_mode = 3
@@ -522,24 +523,10 @@ theme_type_variation = &"CounterLabel"
 text = "0000"
 horizontal_alignment = 1
 
-[node name="SideSeparator4" type="HSeparator" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=1765814970]
-layout_mode = 2
-
-[node name="TickerHeader" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=1495628472]
-layout_mode = 2
-theme_type_variation = &"SideHeaderLabel"
-text = "ЖУРНАЛ СОБЫТИЙ"
-
-[node name="TickerLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=599844667]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 90)
-layout_mode = 2
-size_flags_vertical = 3
-theme_type_variation = &"TickerLabel"
-text = "> ОЖИДАНИЕ СОБЫТИЙ..."
-autowrap_mode = 3
-
 [node name="FatigueComponent" parent="WindowMargin/WindowFrame/WindowLayout" instance=ExtResource("3_fatigue")]
+layout_mode = 2
+
+[node name="LogTicker" parent="WindowMargin/WindowFrame/WindowLayout" instance=ExtResource("5_log_ticker")]
 layout_mode = 2
 
 [node name="StatusBar" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout" unique_id=263621505]

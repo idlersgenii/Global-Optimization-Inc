@@ -66,6 +66,11 @@ signal intern_automation_tick(interns_hired: int, seconds_left: float, interval:
 ## Request playback by string key; AudioManager owns the actual players.
 signal sound_requested(sound_key: StringName)
 
+# --- Logging ---------------------------------------------------------------
+
+## Plain-text line for the corporate console; LogTicker queues and renders it.
+signal log_message_received(text: String)
+
 # --- Upgrades --------------------------------------------------------------
 
 signal upgrade_availability_changed(upgrade_id: StringName, is_available: bool)

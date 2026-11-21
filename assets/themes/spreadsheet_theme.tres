@@ -2,6 +2,7 @@
 
 [ext_resource type="SystemFont" path="res://assets/fonts/arial.tres" id="1_font"]
 [ext_resource type="SystemFont" path="res://assets/fonts/arial_bold.tres" id="2_font_bold"]
+[ext_resource type="SystemFont" path="res://assets/fonts/retro_mono.tres" id="3_font_mono"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_disabled"]
 content_margin_left = 10.0
@@ -281,6 +282,18 @@ bg_color = Color(0.722, 0.478, 0.161, 1)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fatigue_fill_critical"]
 bg_color = Color(0.659, 0.161, 0.098, 1)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_log"]
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 4.0
+bg_color = Color(0.055, 0.11, 0.075, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.114, 0.141, 0.122, 1)
+
 [resource]
 default_font = ExtResource("1_font")
 default_font_size = 14
@@ -346,6 +359,32 @@ LegacyMenuButton/styles/focus = SubResource("StyleBoxFlat_menu_normal")
 LegacyMenuButton/styles/hover = SubResource("StyleBoxFlat_menu_hover")
 LegacyMenuButton/styles/normal = SubResource("StyleBoxFlat_menu_normal")
 LegacyMenuButton/styles/pressed = SubResource("StyleBoxFlat_menu_pressed")
+LogMarquee/base_type = &"Label"
+LogMarquee/colors/font_color = Color(0.85, 0.72, 0.36, 1)
+LogMarquee/font_sizes/font_size = 11
+LogMarquee/fonts/font = ExtResource("3_font_mono")
+LogMeta/base_type = &"Label"
+LogMeta/colors/font_color = Color(0.38, 0.55, 0.4, 1)
+LogMeta/font_sizes/font_size = 10
+LogMeta/fonts/font = ExtResource("3_font_mono")
+LogPanel/base_type = &"PanelContainer"
+LogPanel/styles/panel = SubResource("StyleBoxFlat_log")
+LogRichText/base_type = &"RichTextLabel"
+LogRichText/colors/default_color = Color(0.66, 0.86, 0.68, 1)
+LogRichText/font_sizes/bold_font_size = 11
+LogRichText/font_sizes/bold_italics_font_size = 11
+LogRichText/font_sizes/italics_font_size = 11
+LogRichText/font_sizes/mono_font_size = 11
+LogRichText/font_sizes/normal_font_size = 11
+LogRichText/fonts/bold_font = ExtResource("3_font_mono")
+LogRichText/fonts/bold_italics_font = ExtResource("3_font_mono")
+LogRichText/fonts/italics_font = ExtResource("3_font_mono")
+LogRichText/fonts/mono_font = ExtResource("3_font_mono")
+LogRichText/fonts/normal_font = ExtResource("3_font_mono")
+LogTitle/base_type = &"Label"
+LogTitle/colors/font_color = Color(0.56, 0.93, 0.6, 1)
+LogTitle/font_sizes/font_size = 12
+LogTitle/fonts/font = ExtResource("3_font_mono")
 MenuPanel/base_type = &"PanelContainer"
 MenuPanel/styles/panel = SubResource("StyleBoxFlat_menu_bar")
 MutedLabel/base_type = &"Label"
@@ -378,9 +417,6 @@ TabActivePanel/base_type = &"PanelContainer"
 TabActivePanel/styles/panel = SubResource("StyleBoxFlat_tab_active")
 TabInactivePanel/base_type = &"PanelContainer"
 TabInactivePanel/styles/panel = SubResource("StyleBoxFlat_tab_inactive")
-TickerLabel/base_type = &"Label"
-TickerLabel/colors/font_color = Color(0.16, 0.28, 0.18, 1)
-TickerLabel/font_sizes/font_size = 12
 TitleLabel/base_type = &"Label"
 TitleLabel/colors/font_color = Color(0.914, 0.949, 0.906, 1)
 TitleLabel/font_sizes/font_size = 15

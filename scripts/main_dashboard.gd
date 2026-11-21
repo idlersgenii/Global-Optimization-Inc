@@ -11,7 +11,6 @@ const COLUMN_COUNT: int = 6
 const ROW_HEADER_WIDTH: float = 40.0
 const CELL_HEIGHT: float = 26.0
 const CELL_WIDTHS: Array[float] = [170.0, 150.0, 74.0, 96.0, 70.0, 70.0]
-const TICKER_LIMIT: int = 4
 const CUP_COUNTER_DIGITS: int = 4
 
 const CELL_COFFEE: Vector2i = Vector2i(1, 2)
@@ -52,7 +51,6 @@ const STAGE_SHORT_NAMES: Dictionary[int, String] = {
 @onready var _grind_hint: Label = %GrindHint
 @onready var _grind_button: Button = %GrindButton
 @onready var _cups_value: Label = %CupsValue
-@onready var _ticker_label: Label = %TickerLabel
 @onready var _status_message: Label = %StatusMessageLabel
 @onready var _save_status: Label = %SaveStatusLabel
 @onready var _stage_status: Label = %StageStatusLabel
@@ -60,7 +58,6 @@ const STAGE_SHORT_NAMES: Dictionary[int, String] = {
 @onready var _window_margin: MarginContainer = $WindowMargin
 
 var _cells: Dictionary[Vector2i, Label] = {}
-var _ticker_messages: Array[String] = []
 var _maximized: bool = false
 var _last_stage: int = SignalBus.GameScale.CAFE
 var _recovery_was_active: bool = false
@@ -70,7 +67,6 @@ var _flash_tween: Tween
 
 func _ready() -> void:
 	_build_sheet()
-	_seed_ticker()
 	_connect_signals()
 	_connect_controls()
 	_refresh_all()
@@ -82,13 +78,13 @@ func _ready() -> void:
 		var error := GameState.load_game()
 		if error == OK:
 			_set_status("СЕССИЯ ВОССТАНОВЛЕНА ИЗ АРХИВА")
-			_push_ticker("СЕЙВ ЗАГРУЖЕН")
+			_log_event("СЕЙВ ЗАГРУЖЕН")
 		else:
 			_set_status("ОШИБКА ЗАГРУЗКИ: %d" % error)
-			_push_ticker("НЕ УДАЛОСЬ ЗАГРУЗИТЬ АРХИВ")
+			_log_event("НЕ УДАЛОСЬ ЗАГРУЗИТЬ АРХИВ")
 	else:
 		_set_status("НОВАЯ СМЕНА. СОХРАНЕНИЙ НЕ НАЙДЕНО.")
-		_push_ticker("СМЕНА №001 ОТКРЫТА. СТАЖЁР АЛЕКСЕЙ НА МЕСТЕ.")
+		_log_event("СМЕНА №001 ОТКРЫТА. СТАЖЁР АЛЕКСЕЙ НА МЕСТЕ.")
 
 
 func _connect_signals() -> void:
@@ -305,7 +301,7 @@ func _on_multiplier_changed(_new_multiplier: float) -> void:
 func _on_intern_exhausted() -> void:
 	var percent := int(roundf(GameState.intern_efficiency * 100.0))
 	_set_status("АЛЕКСЕЙ ПЕРЕУТОМЛЁН: ЭФФЕКТИВНОСТЬ %d%%" % percent)
-	_push_ticker("УСТАЛОСТЬ 100%%: ЭФФЕКТИВНОСТЬ %d%%" % percent)
+	_log_event("УСТАЛОСТЬ 100%%: ЭФФЕКТИВНОСТЬ %d%%" % percent)
 
 
 func _on_intern_cheered(_boost: float, cost: float, buff_rate: float) -> void:
@@ -314,7 +310,7 @@ func _on_intern_cheered(_boost: float, cost: float, buff_rate: float) -> void:
 		"АЛЕКСЕЙ ВЗБОДРЁН: БАФФ +%s%%/С НА %d С, -%d CR"
 		% [String.num(buff_rate, 1), duration, int(roundf(cost))]
 	)
-	_push_ticker(
+	_log_event(
 		"ПЕРЕРЫВ: БАФФ +%s%%/С НА %d С ЗА %d CR"
 		% [String.num(buff_rate, 1), duration, int(roundf(cost))]
 	)
@@ -323,10 +319,10 @@ func _on_intern_cheered(_boost: float, cost: float, buff_rate: float) -> void:
 func _on_natural_recovery_changed(rate: float, active: bool) -> void:
 	if active and not _recovery_was_active:
 		_set_status("АЛЕКСЕЙ ОТДЫХАЕТ: РЕГЕНЕРАЦИЯ +%s%%/С" % String.num(rate, 1))
-		_push_ticker("ПАССИВНОЕ ВОССТАНОВЛЕНИЕ: +%s%%/С" % String.num(rate, 1))
+		_log_event("ПАССИВНОЕ ВОССТАНОВЛЕНИЕ: +%s%%/С" % String.num(rate, 1))
 	elif _recovery_was_active and not active and GameState.intern_fatigue <= 0.0:
 		_set_status("АЛЕКСЕЙ ОТДОХНУЛ: УСТАЛОСТЬ 0%")
-		_push_ticker("РЕГЕНЕРАЦИЯ ЗАВЕРШЕНА: АЛЕКСЕЙ ПОЛОН СИЛ")
+		_log_event("РЕГЕНЕРАЦИЯ ЗАВЕРШЕНА: АЛЕКСЕЙ ПОЛОН СИЛ")
 	_recovery_was_active = active
 
 
@@ -403,17 +399,17 @@ func _on_employee_hired(employee_id: StringName) -> void:
 	var interval := String.num(InternManager.INTERN_AUTO_CLICK_INTERVAL_SEC, 1)
 	if count <= 1:
 		_set_status("СТАЖЁР АЛЕКСЕЙ НАНЯТ: АВТОПОМОЛ КАЖДЫЕ %s С" % interval)
-		_push_ticker("HR: СТАЖЁР АЛЕКСЕЙ ОФОРМЛЕН. РУЧНОЙ ТРУД ОПТИМИЗИРОВАН.")
+		_log_event("HR: СТАЖЁР АЛЕКСЕЙ ОФОРМЛЕН. РУЧНОЙ ТРУД ОПТИМИЗИРОВАН.")
 	else:
 		_set_status("НАНЯТ ЕЩЁ ОДИН СТАЖЁР: ВСЕГО %d" % count)
-		_push_ticker("HR: АВТОМАТИЗАЦИЯ УСИЛЕНА. В ШТАТЕ: %d." % count)
+		_log_event("HR: АВТОМАТИЗАЦИЯ УСИЛЕНА. В ШТАТЕ: %d." % count)
 	_refresh_intern_hire_state()
 
 
 func _on_stage_changed(new_stage: int) -> void:
 	_refresh_all()
 	if new_stage != _last_stage:
-		_push_ticker("МАСШТАБ ИЗМЕНЁН: %s" % _stage_name(new_stage))
+		_log_event("МАСШТАБ ИЗМЕНЁН: %s" % _stage_name(new_stage))
 	_last_stage = new_stage
 
 
@@ -427,7 +423,7 @@ func _on_game_loaded(_slot: StringName) -> void:
 
 func _on_game_reset() -> void:
 	_refresh_all()
-	_push_ticker("СОСТОЯНИЕ СБРОШЕНО")
+	_log_event("СОСТОЯНИЕ СБРОШЕНО")
 	_set_status("СБРОС ЗАВЕРШЁН. НОВАЯ СМЕНА.")
 
 
@@ -438,25 +434,25 @@ func _on_save_pressed() -> void:
 	if error == OK:
 		SignalBus.sound_requested.emit(&"keyboard_save")
 		_set_status("СОСТОЯНИЕ СОХРАНЕНО")
-		_push_ticker("СЕЙВ ЗАПИСАН НА ДИСК")
+		_log_event("СЕЙВ ЗАПИСАН НА ДИСК")
 	else:
 		_set_status("ОШИБКА СОХРАНЕНИЯ: %d" % error)
-		_push_ticker("ОШИБКА ЗАПИСИ СЕЙВА")
+		_log_event("ОШИБКА ЗАПИСИ СЕЙВА")
 
 
 func _on_load_pressed() -> void:
 	if not GameState.has_save():
 		_set_status("АРХИВ НЕ НАЙДЕН")
-		_push_ticker("ЗАГРУЗКА ОТМЕНЕНА: СЕЙВ ОТСУТСТВУЕТ")
+		_log_event("ЗАГРУЗКА ОТМЕНЕНА: СЕЙВ ОТСУТСТВУЕТ")
 		return
 
 	var error := GameState.load_game()
 	if error == OK:
 		_set_status("АРХИВ ЗАГРУЖЕН")
-		_push_ticker("СЕССИЯ ВОССТАНОВЛЕНА")
+		_log_event("СЕССИЯ ВОССТАНОВЛЕНА")
 	else:
 		_set_status("ОШИБКА ЗАГРУЗКИ: %d" % error)
-		_push_ticker("АРХИВ ПОВРЕЖДЁН")
+		_log_event("АРХИВ ПОВРЕЖДЁН")
 
 
 func _on_grind_pressed() -> void:
@@ -468,7 +464,7 @@ func _on_grind_pressed() -> void:
 	_flash_coffee_cell()
 	SignalBus.sound_requested.emit(&"keyboard_click")
 	_set_status("ПОМОЛ УСКОРЕН. БАЛАНС: %s CR" % _format_number(GameState.coffee_coins))
-	_push_ticker("РУЧНОЙ ПОМОЛ: +%s CR" % _format_number(reward))
+	_log_event("РУЧНОЙ ПОМОЛ: +%s CR" % _format_number(reward))
 
 
 func _on_hire_intern_pressed() -> void:
@@ -479,7 +475,7 @@ func _on_hire_intern_pressed() -> void:
 		"НАЙМ НЕДОСТУПЕН: НУЖНО %s CR"
 		% _format_number(GameState.get_intern_hire_cost())
 	)
-	_push_ticker("HR: ЗАЯВКА НА НАЙМ ОТКЛОНЕНА. БЮДЖЕТ НЕ СОГЛАСОВАН.")
+	_log_event("HR: ЗАЯВКА НА НАЙМ ОТКЛОНЕНА. БЮДЖЕТ НЕ СОГЛАСОВАН.")
 
 
 func _on_menu_pressed(title: String) -> void:
@@ -502,7 +498,7 @@ func _on_maximize_pressed() -> void:
 
 func _on_close_pressed() -> void:
 	_set_status("ЗАКРЫТИЕ ЗАПРЕЩЕНО ДО ЗАВЕРШЕНИЯ ОПТИМИЗАЦИИ")
-	_push_ticker("ЗАПРОС НА ЗАКРЫТИЕ ОТКЛОНЁН СИСТЕМОЙ")
+	_log_event("ЗАПРОС НА ЗАКРЫТИЕ ОТКЛОНЁН СИСТЕМОЙ")
 
 
 # --- Utilities -------------------------------------------------------------
@@ -511,20 +507,10 @@ func _set_status(message: String) -> void:
 	_status_message.text = "> " + message
 
 
-func _seed_ticker() -> void:
-	_ticker_messages.clear()
-	_push_ticker("СИСТЕМА АУДИТА ЗАПУЩЕНА")
-	_push_ticker("СТАЖЁР АЛЕКСЕЙ НА МЕСТЕ")
-	_push_ticker("ОЖИДАНИЕ ОПТИМИЗАЦИИ")
-
-
-func _push_ticker(message: String) -> void:
-	var now: Dictionary = Time.get_datetime_dict_from_system()
-	var stamp := "%02d:%02d" % [int(now["hour"]), int(now["minute"])]
-	_ticker_messages.append("> [%s] %s" % [stamp, message])
-	while _ticker_messages.size() > TICKER_LIMIT:
-		_ticker_messages.pop_front()
-	_ticker_label.text = "\n".join(PackedStringArray(_ticker_messages))
+## Publishes a plain-text line to the corporate console at the bottom of the
+## window. LogTicker owns timestamps, formatting and queueing.
+func _log_event(message: String) -> void:
+	SignalBus.emit_signal("log_message_received", message)
 
 
 func _update_clock() -> void:
