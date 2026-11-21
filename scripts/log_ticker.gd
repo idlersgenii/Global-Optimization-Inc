@@ -36,8 +36,8 @@ const MARQUEE_MESSAGES: Array[String] = [
 	"МЫ НЕ ЭКОНОМИМ НА ЛЮДЯХ. МЫ ЭКОНОМИМ ИХ ВРЕМЯ.",
 ]
 
-## Fatigue bands and the overwork claim shown for each. The 40 % line is only
-## selected while fatigue is below 40; higher bands escalate the claim.
+## Fatigue thresholds and the overwork claim unlocked at each. Below 40 % the
+## marquee uses only regular slogans; reaching a threshold escalates the claim.
 const FATIGUE_MESSAGES: Dictionary[int, Array] = {
 	40: [
 		"НОРМА ПЕРЕРАБОТКИ ПРЕВЫШЕНА НА 40%. СПАСИБО ЗА ЛОЯЛЬНОСТЬ.",
@@ -113,7 +113,7 @@ func _ready() -> void:
 	_pump_timer.timeout.connect(_pump)
 
 	_last_fatigue_band = _fatigue_band(GameState.intern_fatigue)
-	_set_marquee_text(_fatigue_marquee_text())
+	_apply_fatigue_marquee()
 	_seed_boot_log()
 	_schedule_ambient()
 	call_deferred("_begin_marquee")
@@ -242,14 +242,15 @@ func _current_stamp() -> String:
 
 
 func _format_line(message: String, stamp: String, count: int) -> String:
-	return "[color=#%s]%s[/color] [color=#%s]%s[/color] [color=#%s]×%d[/color]" % [
+	var line := "[color=#%s]%s[/color] [color=#%s]%s[/color]" % [
 		COLOR_TIMESTAMP,
 		stamp,
 		_message_color(message),
 		message.replace("[", "[lb]"),
-		COLOR_COUNT,
-		count,
 	]
+	if count <= 1:
+		return line
+	return line + " [color=#%s]×%d[/color]" % [COLOR_COUNT, count]
 
 
 func _message_color(message: String) -> String:
@@ -297,14 +298,18 @@ func _on_ambient_timeout() -> void:
 
 # --- Marquee ---------------------------------------------------------------
 
+## Returns 0 while no overwork threshold is reached, then the highest reached
+## threshold. The marquee only claims overwork once its band is above zero.
 func _fatigue_band(fatigue: float) -> int:
-	if fatigue >= 80.0:
+	if fatigue >= 95.0:
 		return 95
-	if fatigue >= 60.0:
+	if fatigue >= 80.0:
 		return 80
-	if fatigue >= 40.0:
+	if fatigue >= 60.0:
 		return 60
-	return 40
+	if fatigue >= 40.0:
+		return 40
+	return 0
 
 
 func _fatigue_marquee_text() -> String:
@@ -319,8 +324,7 @@ func _on_fatigue_changed(new_value: float) -> void:
 	if band == _last_fatigue_band:
 		return
 	_last_fatigue_band = band
-	_marquee_show_fatigue = true
-	_set_marquee_text(_fatigue_marquee_text())
+	_apply_fatigue_marquee()
 
 
 func _on_game_loaded(_slot: StringName) -> void:
@@ -335,8 +339,25 @@ func _on_game_reset() -> void:
 ## fatigue_changed for every field they restore.
 func _refresh_fatigue_marquee() -> void:
 	_last_fatigue_band = _fatigue_band(GameState.intern_fatigue)
+	_apply_fatigue_marquee()
+
+
+## Below 40 % there is no overwork claim to show, so fall back to slogans.
+func _apply_fatigue_marquee() -> void:
+	if _last_fatigue_band == 0:
+		_marquee_show_fatigue = false
+		_show_next_slogan()
+		return
 	_marquee_show_fatigue = true
 	_set_marquee_text(_fatigue_marquee_text())
+
+
+func _show_next_slogan() -> void:
+	if MARQUEE_MESSAGES.is_empty():
+		return
+	var text := MARQUEE_MESSAGES[_marquee_index % MARQUEE_MESSAGES.size()]
+	_marquee_index = (_marquee_index + 1) % MARQUEE_MESSAGES.size()
+	_set_marquee_text(text)
 
 
 func _begin_marquee() -> void:
@@ -348,13 +369,13 @@ func _begin_marquee() -> void:
 
 func _advance_marquee() -> void:
 	_marquee_show_fatigue = not _marquee_show_fatigue
-	if _marquee_show_fatigue or MARQUEE_MESSAGES.is_empty():
-		_set_marquee_text(_fatigue_marquee_text())
-		return
-
-	var text := MARQUEE_MESSAGES[_marquee_index % MARQUEE_MESSAGES.size()]
-	_marquee_index = (_marquee_index + 1) % MARQUEE_MESSAGES.size()
-	_set_marquee_text(text)
+	if _marquee_show_fatigue:
+		var text := _fatigue_marquee_text()
+		if not text.is_empty():
+			_set_marquee_text(text)
+			return
+		_marquee_show_fatigue = false
+	_show_next_slogan()
 
 
 func _set_marquee_text(text: String) -> void:
