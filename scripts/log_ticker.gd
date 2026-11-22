@@ -5,7 +5,8 @@ extends PanelContainer
 ## SignalBus.log_message_received. The console queues them, collapses
 ## consecutive duplicates into a repeat counter, reveals each line with a short
 ## typewriter effect and keeps the newest entry in view. A marquee row cycles
-## satirical corporate slogans and reacts to the intern's fatigue tier.
+## satirical corporate slogans and, once a fatigue tier is reached, includes
+## overwork notices in that rotation without interrupting the current message.
 
 const MAX_QUEUE: int = 64
 const MAX_LOG_LINES: int = 80
@@ -94,10 +95,9 @@ var _typing: bool = false
 var _last_message: String = ""
 var _last_count: int = 1
 var _marquee_index: int = 0
-var _marquee_show_fatigue: bool = true
+var _marquee_show_fatigue: bool = false
 var _marquee_x: float = 0.0
 var _marquee_ready: bool = false
-var _last_fatigue_band: int = -1
 var _ambient_index: int = 0
 var _reveal_tween: Tween
 
@@ -105,15 +105,11 @@ var _reveal_tween: Tween
 func _ready() -> void:
 	_log.scroll_following = true
 	SignalBus.log_message_received.connect(_on_log_message_received)
-	SignalBus.fatigue_changed.connect(_on_fatigue_changed)
-	SignalBus.game_loaded.connect(_on_game_loaded)
-	SignalBus.game_reset.connect(_on_game_reset)
 	_blink_timer.timeout.connect(_on_blink_timeout)
 	_ambient_timer.timeout.connect(_on_ambient_timeout)
 	_pump_timer.timeout.connect(_pump)
 
-	_last_fatigue_band = _fatigue_band(GameState.intern_fatigue)
-	_apply_fatigue_marquee()
+	_show_next_slogan()
 	_seed_boot_log()
 	_schedule_ambient()
 	call_deferred("_begin_marquee")
@@ -317,39 +313,6 @@ func _fatigue_marquee_text() -> String:
 	if variants.is_empty():
 		return ""
 	return variants[randi_range(0, variants.size() - 1)]
-
-
-func _on_fatigue_changed(new_value: float) -> void:
-	var band := _fatigue_band(new_value)
-	if band == _last_fatigue_band:
-		return
-	_last_fatigue_band = band
-	_apply_fatigue_marquee()
-
-
-func _on_game_loaded(_slot: StringName) -> void:
-	_refresh_fatigue_marquee()
-
-
-func _on_game_reset() -> void:
-	_refresh_fatigue_marquee()
-
-
-## Re-reads fatigue after a load/reset, since those paths do not emit
-## fatigue_changed for every field they restore.
-func _refresh_fatigue_marquee() -> void:
-	_last_fatigue_band = _fatigue_band(GameState.intern_fatigue)
-	_apply_fatigue_marquee()
-
-
-## Below 40 % there is no overwork claim to show, so fall back to slogans.
-func _apply_fatigue_marquee() -> void:
-	if _last_fatigue_band == 0:
-		_marquee_show_fatigue = false
-		_show_next_slogan()
-		return
-	_marquee_show_fatigue = true
-	_set_marquee_text(_fatigue_marquee_text())
 
 
 func _show_next_slogan() -> void:
