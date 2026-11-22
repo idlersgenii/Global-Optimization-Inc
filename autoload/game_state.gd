@@ -53,6 +53,29 @@ const EFFICIENCY_TIERS: Array[Vector2] = [
 ## INTERN_BASE_COST * INTERN_COST_GROWTH^n, where n is the current staff size.
 const INTERN_BASE_COST: float = 25.0
 const INTERN_COST_GROWTH: float = 1.15
+## The cafe starts with three rack entries in the HR & Assets registry. Their
+## descriptions are static; their states are derived from live run data.
+const HR_RACK_DEFINITIONS: Array[Dictionary] = [
+	{
+		"id": &"rack_b01",
+		"name": "СТОЙКА B-01",
+		"detail": "ПРОИЗВОДСТВО · EXCEL",
+	},
+	{
+		"id": &"rack_b02",
+		"name": "СТОЙКА B-02",
+		"detail": "АРХИВ · СЕЙВЫ",
+	},
+	{
+		"id": &"rack_b03",
+		"name": "СТОЙКА B-03",
+		"detail": "ОХЛАЖДЕНИЕ · КИСЛОРОД",
+	},
+]
+## Fatigue at which Alexey and the production rack are considered burned out.
+const HR_BURNOUT_FATIGUE: float = 95.0
+## The cooling rack gives up earlier than the person it is supposed to cool.
+const HR_COOLING_FAILURE_FATIGUE: float = 80.0
 
 ## Fiat credits, called "coffee coins" in the game.
 var coffee_coins: float = 0.0
@@ -90,10 +113,13 @@ var _cheer_ready_at_msec: int = 0
 ## Temporary cheer-price surcharge: steps and the time it wears off.
 var _cheer_overuse_steps: int = 0
 var _cheer_overuse_until_msec: int = 0
+## Last registry signature broadcast to the HR sidebar.
+var _last_hr_signature: String = ""
 
 
 func _ready() -> void:
 	_last_activity_msec = Time.get_ticks_msec()
+	_last_hr_signature = _hr_signature()
 	SignalBus.intern_auto_grind_requested.connect(_on_intern_auto_grind_requested)
 
 
@@ -184,6 +210,7 @@ func hire_intern() -> bool:
 	interns_hired += 1
 	SignalBus.intern_hire_state_changed.emit(interns_hired, get_intern_hire_cost())
 	SignalBus.employee_hired.emit(SignalBus.INTERN_ALEXEY_ID)
+	_emit_hr_registry_if_changed()
 	return true
 
 
@@ -198,6 +225,99 @@ func _on_intern_auto_grind_requested(employee_id: StringName, count: int) -> voi
 		total_reward += grind_coffee()
 	if total_reward > 0.0:
 		SignalBus.intern_auto_grind_performed.emit(total_reward)
+
+# --- HR & Assets registry --------------------------------------------------
+
+## Read-only snapshot used by HRSidebar on startup and after load/reset. Live
+## updates arrive through SignalBus.hr_registry_changed.
+func get_hr_registry() -> Dictionary:
+	return {
+		"employees": _build_hr_employees(),
+		"server_racks": _build_hr_server_racks(),
+	}
+
+
+func _build_hr_employees() -> Array[Dictionary]:
+	var detail := "ВАКАНСИЯ · ОЖИДАЕТ НАЙМА"
+	if interns_hired == 1:
+		detail = "СТАЖЁР · АВТОМАТИЗАЦИЯ"
+	elif interns_hired > 1:
+		detail = "СТАЖЁРЫ ×%d · АВТОМАТИЗАЦИЯ" % interns_hired
+
+	var entries: Array[Dictionary] = [
+		{
+			"id": SignalBus.INTERN_ALEXEY_ID,
+			"name": "АЛЕКСЕЙ",
+			"detail": detail,
+			"status": _get_intern_hr_status(),
+		},
+	]
+	return entries
+
+
+func _build_hr_server_racks() -> Array[Dictionary]:
+	var entries: Array[Dictionary] = []
+	for definition in HR_RACK_DEFINITIONS:
+		var rack_id: StringName = definition["id"]
+		entries.append(
+			{
+				"id": rack_id,
+				"name": definition["name"],
+				"detail": definition["detail"],
+				"status": _get_rack_hr_status(rack_id),
+			}
+		)
+	return entries
+
+
+## Alexey is "optimized" before the position is funded, then works until heavy
+## fatigue burns him out.
+func _get_intern_hr_status() -> int:
+	if interns_hired <= 0:
+		return SignalBus.HRStatus.OPTIMIZED
+	if intern_fatigue >= HR_BURNOUT_FATIGUE:
+		return SignalBus.HRStatus.BURNED_OUT
+	return SignalBus.HRStatus.WORKING
+
+
+func _get_rack_hr_status(rack_id: StringName) -> int:
+	match rack_id:
+		&"rack_b01":
+			if intern_fatigue >= HR_BURNOUT_FATIGUE:
+				return SignalBus.HRStatus.BURNED_OUT
+		&"rack_b02":
+			if current_stage > SignalBus.GameScale.CAFE:
+				return SignalBus.HRStatus.OPTIMIZED
+		&"rack_b03":
+			if intern_fatigue >= HR_COOLING_FAILURE_FATIGUE:
+				return SignalBus.HRStatus.BURNED_OUT
+	return SignalBus.HRStatus.WORKING
+
+
+## Cheap state fingerprint: rebuild payloads only when the roster or a status
+## actually changes, never once per frame.
+func _hr_signature() -> String:
+	var parts := PackedStringArray(
+		[
+			str(interns_hired),
+			str(_get_intern_hr_status()),
+			str(current_stage),
+		]
+	)
+	for definition in HR_RACK_DEFINITIONS:
+		parts.append(str(_get_rack_hr_status(definition["id"])))
+	return "|".join(parts)
+
+
+func _emit_hr_registry_if_changed() -> void:
+	var signature := _hr_signature()
+	if signature == _last_hr_signature:
+		return
+	_last_hr_signature = signature
+	SignalBus.hr_registry_changed.emit(
+		_build_hr_employees(),
+		_build_hr_server_racks()
+	)
 
 # --- Intern fatigue --------------------------------------------------------
 
@@ -220,6 +340,7 @@ func _process(delta: float) -> void:
 	intern_fatigue = maxf(intern_fatigue - rate * delta, 0.0)
 	SignalBus.fatigue_changed.emit(intern_fatigue)
 	_sync_efficiency_with_fatigue()
+	_emit_hr_registry_if_changed()
 
 
 ## Called on every grind click, manual or automated. Activity only pauses the
@@ -298,6 +419,7 @@ func add_fatigue(amount: float) -> void:
 	_sync_efficiency_with_fatigue()
 	if not was_exhausted and intern_fatigue >= FATIGUE_MAX:
 		SignalBus.intern_exhausted.emit()
+	_emit_hr_registry_if_changed()
 
 
 ## Efficiency multiplier for the given fatigue. Tiers make the intern slower
@@ -482,6 +604,7 @@ func set_stage(new_stage: int) -> void:
 
 	if current_stage > previous_stage:
 		SignalBus.scope_creep_triggered.emit(current_stage)
+	_emit_hr_registry_if_changed()
 
 # --- Save / load -----------------------------------------------------------
 
@@ -661,3 +784,4 @@ func _emit_all_changes() -> void:
 	)
 	SignalBus.intern_hire_state_changed.emit(interns_hired, get_intern_hire_cost())
 	SignalBus.scale_changed.emit(current_stage)
+	_emit_hr_registry_if_changed()

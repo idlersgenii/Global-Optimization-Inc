@@ -23,6 +23,13 @@ enum HRSeverity {
 	CRITICAL = 2,
 }
 
+## State of one employee or asset in the HR & Assets registry.
+enum HRStatus {
+	WORKING = 0,
+	BURNED_OUT = 1,
+	OPTIMIZED = 2,
+}
+
 # --- Shared identifiers ----------------------------------------------------
 
 const INTERN_ALEXEY_ID: StringName = &"intern_alexey"
@@ -86,6 +93,9 @@ signal hr_choice_made(event_id: StringName, choice_id: StringName)
 signal hr_notification_received(title: String, message: String, severity: HRSeverity)
 signal morale_changed(new_value: float)
 signal oxygen_level_changed(new_level: float)
+## Full snapshot for the HR & Assets sidebar. GameState emits it only when a
+## registry entry or status actually changes, so the UI does not poll.
+signal hr_registry_changed(employees: Array[Dictionary], server_racks: Array[Dictionary])
 
 # --- Scale and progression -------------------------------------------------
 

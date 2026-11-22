@@ -1,0 +1,124 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/hr_sidebar.gd" id="1_script"]
+
+[node name="HRSidebar" type="PanelContainer"]
+custom_minimum_size = Vector2(320, 0)
+size_flags_vertical = 3
+theme_type_variation = &"SidePanel"
+script = ExtResource("1_script")
+
+[node name="Layout" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HeaderRow" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+
+[node name="HeaderTitle" type="Label" parent="Layout/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"SideHeaderLabel"
+text = "ОТДЕЛ КАДРОВ И РЕСУРСОВ"
+
+[node name="HeaderMeta" type="Label" parent="Layout/HeaderRow"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "HR-09"
+vertical_alignment = 1
+
+[node name="SubtitleRow" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+
+[node name="Subtitle" type="Label" parent="Layout/SubtitleRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"MutedLabel"
+text = "РЕЕСТР АКТИВОВ // СМЕНА 001"
+clip_text = true
+
+[node name="LiveLabel" type="Label" parent="Layout/SubtitleRow"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+theme_override_colors/font_color = Color(0.17, 0.47, 0.23, 1)
+theme_override_font_sizes/font_size = 10
+text = "● LIVE"
+
+[node name="HeaderSeparator" type="HSeparator" parent="Layout"]
+layout_mode = 2
+
+[node name="RegistryScroll" type="ScrollContainer" parent="Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Content" type="VBoxContainer" parent="Layout/RegistryScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="EmployeesHeader" type="HBoxContainer" parent="Layout/RegistryScroll/Content"]
+layout_mode = 2
+
+[node name="EmployeesTitle" type="Label" parent="Layout/RegistryScroll/Content/EmployeesHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"SideHeaderLabel"
+text = "СОТРУДНИКИ"
+
+[node name="EmployeesCount" type="Label" parent="Layout/RegistryScroll/Content/EmployeesHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "0"
+vertical_alignment = 1
+
+[node name="EmployeesList" type="VBoxContainer" parent="Layout/RegistryScroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="SectionSeparator1" type="HSeparator" parent="Layout/RegistryScroll/Content"]
+layout_mode = 2
+
+[node name="ServerRacksHeader" type="HBoxContainer" parent="Layout/RegistryScroll/Content"]
+layout_mode = 2
+
+[node name="ServerRacksTitle" type="Label" parent="Layout/RegistryScroll/Content/ServerRacksHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"SideHeaderLabel"
+text = "СЕРВЕРНЫЕ СТОЙКИ"
+
+[node name="ServerRacksCount" type="Label" parent="Layout/RegistryScroll/Content/ServerRacksHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "0"
+vertical_alignment = 1
+
+[node name="ServerRacksList" type="VBoxContainer" parent="Layout/RegistryScroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="FooterSeparator" type="HSeparator" parent="Layout"]
+layout_mode = 2
+
+[node name="FooterRow" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+
+[node name="FooterSummary" type="Label" parent="Layout/FooterRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"MutedLabel"
+theme_override_font_sizes/font_size = 10
+text = "АКТИВОВ: 0"
+
+[node name="FooterStatus" type="Label" parent="Layout/FooterRow"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+theme_override_colors/font_color = Color(0.17, 0.47, 0.23, 1)
+theme_override_font_sizes/font_size = 10
+text = "РЕЕСТР АКТУАЛЕН"

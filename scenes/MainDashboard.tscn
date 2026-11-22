@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" path="res://scenes/FatigueComponent.tscn" id="3_fatigue"]
 [ext_resource type="Texture2D" path="res://assets/portraits/alexey.png" id="4_alexey"]
 [ext_resource type="PackedScene" path="res://scenes/LogTicker.tscn" id="5_log_ticker"]
+[ext_resource type="PackedScene" path="res://scenes/HRSidebar.tscn" id="6_hr_sidebar"]
 
 [node name="MainDashboard" type="Control" unique_id=1658704504]
 layout_mode = 3
@@ -522,6 +523,9 @@ layout_mode = 2
 theme_type_variation = &"CounterLabel"
 text = "0000"
 horizontal_alignment = 1
+
+[node name="HRSidebar" parent="WindowMargin/WindowFrame/WindowLayout/Body" instance=ExtResource("6_hr_sidebar")]
+layout_mode = 2
 
 [node name="FatigueComponent" parent="WindowMargin/WindowFrame/WindowLayout" instance=ExtResource("3_fatigue")]
 layout_mode = 2
