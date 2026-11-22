@@ -122,18 +122,18 @@ func _create_row(entry: Dictionary, index: int) -> PanelContainer:
 	info.add_theme_constant_override("separation", 0)
 	row.add_child(info)
 
+	# Name and status share the first line; the detail gets the full width of
+	# the row below them, so longer labels never run under the status column.
+	var title_row := HBoxContainer.new()
+	title_row.add_theme_constant_override("separation", 4)
+	info.add_child(title_row)
+
 	var name_label := Label.new()
 	name_label.theme_type_variation = &"CellLabel"
 	name_label.text = name_text
 	name_label.clip_text = true
-	info.add_child(name_label)
-
-	var detail_label := Label.new()
-	detail_label.theme_type_variation = &"MutedLabel"
-	detail_label.add_theme_font_size_override("font_size", 10)
-	detail_label.text = detail_text
-	detail_label.clip_text = true
-	info.add_child(detail_label)
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_row.add_child(name_label)
 
 	var status_label := Label.new()
 	status_label.custom_minimum_size = Vector2(STATUS_WIDTH, 0.0)
@@ -143,7 +143,14 @@ func _create_row(entry: Dictionary, index: int) -> PanelContainer:
 	status_label.add_theme_color_override("font_color", _status_color(status))
 	status_label.text = _status_label(status)
 	status_label.clip_text = true
-	row.add_child(status_label)
+	title_row.add_child(status_label)
+
+	var detail_label := Label.new()
+	detail_label.theme_type_variation = &"MutedLabel"
+	detail_label.add_theme_font_size_override("font_size", 10)
+	detail_label.text = detail_text
+	detail_label.clip_text = true
+	info.add_child(detail_label)
 
 	return panel
 
