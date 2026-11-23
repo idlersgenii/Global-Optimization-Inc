@@ -1,10 +1,11 @@
 [gd_scene format=3 uid="uid://ctxivx0yo7kv1"]
 
 [ext_resource type="Script" uid="uid://cwohs1f05l3w2" path="res://scripts/main_dashboard.gd" id="1_script"]
-[ext_resource type="Theme" path="res://assets/themes/spreadsheet_theme.tres" id="2_theme"]
+[ext_resource type="Theme" uid="uid://c4f2eamd6rhfh" path="res://assets/themes/spreadsheet_theme.tres" id="2_theme"]
 [ext_resource type="PackedScene" path="res://scenes/FatigueComponent.tscn" id="3_fatigue"]
-[ext_resource type="Texture2D" path="res://assets/portraits/alexey.png" id="4_alexey"]
+[ext_resource type="Texture2D" uid="uid://b6444ck156m8i" path="res://assets/portraits/alexey.png" id="4_alexey"]
 [ext_resource type="PackedScene" path="res://scenes/LogTicker.tscn" id="5_log_ticker"]
+[ext_resource type="PackedScene" path="res://scenes/UpgradePanel.tscn" id="5_r6yhy"]
 [ext_resource type="PackedScene" path="res://scenes/HRSidebar.tscn" id="6_hr_sidebar"]
 
 [node name="MainDashboard" type="Control" unique_id=1658704504]
@@ -430,59 +431,59 @@ layout_mode = 2
 value = 21.0
 show_percentage = false
 
-[node name="InternHeader" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout"]
+[node name="InternHeader" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=276079462]
 layout_mode = 2
 theme_type_variation = &"SideHeaderLabel"
 text = "АВТОМАТИЗАЦИЯ ТРУДА"
 
-[node name="InternCard" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout"]
+[node name="InternCard" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=1911744514]
 layout_mode = 2
 theme_type_variation = &"CellPanel"
 
-[node name="InternCardLayout" type="HBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/InternCard"]
+[node name="InternCardLayout" type="HBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/InternCard" unique_id=150799592]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="InternPortrait" type="TextureRect" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/InternCard/InternCardLayout"]
+[node name="InternPortrait" type="TextureRect" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/InternCard/InternCardLayout" unique_id=794745730]
 unique_name_in_owner = true
+texture_filter = 1
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
-texture_filter = 1
 texture = ExtResource("4_alexey")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="InternInfo" type="VBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/InternCard/InternCardLayout"]
+[node name="InternInfo" type="VBoxContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/InternCard/InternCardLayout" unique_id=582822311]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 2
 
-[node name="InternStateLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/InternCard/InternCardLayout/InternInfo"]
+[node name="InternStateLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/InternCard/InternCardLayout/InternInfo" unique_id=1864527072]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"CellLabel"
 text = "СТАЖЁР НЕ НАНЯТ"
 
-[node name="InternRateLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/InternCard/InternCardLayout/InternInfo"]
+[node name="InternRateLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/InternCard/InternCardLayout/InternInfo" unique_id=122214305]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "АВТОКЛИК: ВЫКЛЮЧЕН"
 
-[node name="InternCountdownLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/InternCard/InternCardLayout/InternInfo"]
+[node name="InternCountdownLabel" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/InternCard/InternCardLayout/InternInfo" unique_id=1649749659]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"FatigueLabel"
 text = "АВТОКЛИК: ВЫКЛЮЧЕН"
 
-[node name="InternProgress" type="ProgressBar" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/InternCard/InternCardLayout/InternInfo"]
+[node name="InternProgress" type="ProgressBar" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/InternCard/InternCardLayout/InternInfo" unique_id=1641232116]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
 max_value = 3.0
 show_percentage = false
 
-[node name="HireInternButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout"]
+[node name="HireInternButton" type="Button" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=958462011]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
@@ -508,30 +509,32 @@ theme_type_variation = &"MutedLabel"
 text = "НАГРАДА: 1.00 CR ЗА КЛИК"
 autowrap_mode = 3
 
-[node name="CupsCaption" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout"]
+[node name="CupsCaption" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=1664723722]
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "ЧАШЕК СВАРЕНО"
 
-[node name="CupsCounter" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout"]
+[node name="CupsCounter" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout" unique_id=618487875]
 layout_mode = 2
 theme_type_variation = &"CounterPanel"
 
-[node name="CupsValue" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/CupsCounter"]
+[node name="CupsValue" type="Label" parent="WindowMargin/WindowFrame/WindowLayout/Body/SidePanel/SideLayout/CupsCounter" unique_id=288381358]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"CounterLabel"
 text = "0000"
 horizontal_alignment = 1
 
-[node name="HRSidebar" parent="WindowMargin/WindowFrame/WindowLayout/Body" instance=ExtResource("6_hr_sidebar")]
+[node name="HRSidebar" parent="WindowMargin/WindowFrame/WindowLayout/Body" unique_id=141184767 instance=ExtResource("6_hr_sidebar")]
 layout_mode = 2
 
-[node name="FatigueComponent" parent="WindowMargin/WindowFrame/WindowLayout" instance=ExtResource("3_fatigue")]
+[node name="UpgradePanel" parent="WindowMargin/WindowFrame/WindowLayout/Body" unique_id=1168013697 instance=ExtResource("5_r6yhy")]
 layout_mode = 2
 
-[node name="LogTicker" parent="WindowMargin/WindowFrame/WindowLayout" instance=ExtResource("5_log_ticker")]
+[node name="FatigueComponent" parent="WindowMargin/WindowFrame/WindowLayout" unique_id=10085509 instance=ExtResource("3_fatigue")]
 layout_mode = 2
+
+[node name="LogTicker" parent="WindowMargin/WindowFrame/WindowLayout" unique_id=4960560 instance=ExtResource("5_log_ticker")]
 
 [node name="StatusBar" type="PanelContainer" parent="WindowMargin/WindowFrame/WindowLayout" unique_id=263621505]
 layout_mode = 2

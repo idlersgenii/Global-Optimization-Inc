@@ -1,0 +1,82 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/upgrade_panel.gd" id="1_script"]
+
+[node name="UpgradePanel" type="PanelContainer"]
+custom_minimum_size = Vector2(340, 0)
+size_flags_vertical = 3
+theme_type_variation = &"SidePanel"
+script = ExtResource("1_script")
+
+[node name="Layout" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HeaderRow" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+
+[node name="HeaderTitle" type="Label" parent="Layout/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"SideHeaderLabel"
+text = "ДЕРЕВО РЕФАКТОРИНГА"
+
+[node name="HeaderMeta" type="Label" parent="Layout/HeaderRow"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "R&D-01"
+vertical_alignment = 1
+
+[node name="SubtitleRow" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+
+[node name="Subtitle" type="Label" parent="Layout/SubtitleRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"MutedLabel"
+text = "ГРЯЗНЫЕ АПГРЕЙДЫ // ЭПОХА 1"
+clip_text = true
+
+[node name="UpgradeCount" type="Label" parent="Layout/SubtitleRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+theme_override_colors/font_color = Color(0.17, 0.47, 0.23, 1)
+theme_override_font_sizes/font_size = 10
+text = "0 / 2"
+
+[node name="HeaderSeparator" type="HSeparator" parent="Layout"]
+layout_mode = 2
+
+[node name="UpgradeScroll" type="ScrollContainer" parent="Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="UpgradeList" type="VBoxContainer" parent="Layout/UpgradeScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="FooterSeparator" type="HSeparator" parent="Layout"]
+layout_mode = 2
+
+[node name="FooterRow" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+
+[node name="UpgradeFooter" type="Label" parent="Layout/FooterRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"MutedLabel"
+theme_override_font_sizes/font_size = 10
+text = "ВНЕДРЕНО: 0 ИЗ 2"
+
+[node name="UpgradeStatus" type="Label" parent="Layout/FooterRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+theme_override_colors/font_color = Color(0.17, 0.47, 0.23, 1)
+theme_override_font_sizes/font_size = 10
+text = "ДОСТУПНО: 2"

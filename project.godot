@@ -22,6 +22,7 @@ SignalBus="*res://autoload/signal_bus.gd"
 GameState="*res://autoload/game_state.gd"
 InternManager="*res://autoload/InternManager.gd"
 AudioManager="*res://autoload/AudioManager.gd"
+UpgradeManager="*res://autoload/UpgradeManager.gd"
 
 [display]
 

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/upgrade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/icons/upgrade_neuro_eye.tres" id="2_icon"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"no_blinking_neuro_patch"
+title = "Отказ от моргания (Нейро-патч 3.0)"
+description = "Блокировка рефлекса увлажнения роговицы ради экономии драгоценных миллисекунд рабочего времени."
+effect_text = "Процессорное время персонала +4.2%. Сотрудники начинают неподвижно смотреть в стену."
+icon = ExtResource("2_icon")
+coffee_cost = 90.0
+click_multiplier_factor = 1.042

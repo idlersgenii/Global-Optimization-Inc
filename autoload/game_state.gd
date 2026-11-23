@@ -9,7 +9,7 @@ extends Node
 ## decides whether to call `load_game()` when `has_save()` is true.
 
 const SAVE_PATH: String = "user://savegame.json"
-const SAVE_VERSION: int = 3
+const SAVE_VERSION: int = 4
 const DEFAULT_SAVE_SLOT: StringName = &"default"
 
 const FATIGUE_MAX: float = 100.0
@@ -87,6 +87,8 @@ var metaverse_shares: float = 0.0
 ## Global production multipliers applied by upgrades and HR events.
 var production_multiplier: float = 1.0
 var click_multiplier: float = 1.0
+## Hired interns work this many times faster than the base cycle.
+var automation_speed_multiplier: float = 1.0
 
 ## One of the values in SignalBus.GameScale.
 var current_stage: int = SignalBus.GameScale.CAFE
@@ -115,6 +117,8 @@ var _cheer_overuse_steps: int = 0
 var _cheer_overuse_until_msec: int = 0
 ## Last registry signature broadcast to the HR sidebar.
 var _last_hr_signature: String = ""
+## Upgrade IDs bought during the current run; persisted with the save.
+var _purchased_upgrades: Dictionary[StringName, bool] = {}
 
 
 func _ready() -> void:
@@ -587,6 +591,70 @@ func set_click_multiplier(value: float) -> void:
 	click_multiplier = clamped
 	SignalBus.click_multiplier_changed.emit(click_multiplier)
 
+
+func set_automation_speed_multiplier(value: float) -> void:
+	var clamped := maxf(value, 0.01)
+	if is_equal_approx(automation_speed_multiplier, clamped):
+		return
+	automation_speed_multiplier = clamped
+	SignalBus.automation_speed_changed.emit(automation_speed_multiplier)
+
+# --- Dirty upgrades --------------------------------------------------------
+
+func has_upgrade(upgrade_id: StringName) -> bool:
+	return _purchased_upgrades.has(upgrade_id)
+
+
+## Bought upgrade IDs for saves and debug tooling.
+func get_purchased_upgrade_ids() -> Array[StringName]:
+	var ids: Array[StringName] = []
+	for upgrade_id in _purchased_upgrades.keys():
+		ids.append(upgrade_id)
+	return ids
+
+
+## Atomic purchase owned by the economy: validates funds, records the ID,
+## applies multiplicative effects and broadcasts the result. UpgradeManager
+## supplies the effects from its UpgradeData catalog, so GameState stays
+## independent of individual upgrade definitions.
+func purchase_upgrade(
+	upgrade_id: StringName,
+	coffee_cost: float,
+	pure_logic_cost: float,
+	effects: Dictionary[StringName, float]
+) -> bool:
+	if upgrade_id == &"" or has_upgrade(upgrade_id):
+		return false
+
+	var coffee_price := maxf(coffee_cost, 0.0)
+	var logic_price := maxf(pure_logic_cost, 0.0)
+	if coffee_coins < coffee_price or pure_logic_points < logic_price:
+		return false
+	if coffee_price > 0.0 and not spend_coffee(coffee_price):
+		return false
+	if logic_price > 0.0 and not spend_pure_logic(logic_price):
+		return false
+
+	_purchased_upgrades[upgrade_id] = true
+
+	if effects.has(&"production_multiplier"):
+		set_production_multiplier(
+			production_multiplier * float(effects[&"production_multiplier"])
+		)
+	if effects.has(&"click_multiplier"):
+		set_click_multiplier(click_multiplier * float(effects[&"click_multiplier"]))
+	if effects.has(&"automation_speed"):
+		set_automation_speed_multiplier(
+			automation_speed_multiplier * float(effects[&"automation_speed"])
+		)
+
+	SignalBus.upgrade_purchased.emit(
+		upgrade_id,
+		coffee_price if coffee_price > 0.0 else logic_price
+	)
+	SignalBus.upgrade_tree_changed.emit()
+	return true
+
 # --- Simulation stage ------------------------------------------------------
 
 func set_stage(new_stage: int) -> void:
@@ -675,13 +743,23 @@ func to_dict() -> Dictionary[String, Variant]:
 		"metaverse_shares": metaverse_shares,
 		"production_multiplier": production_multiplier,
 		"click_multiplier": click_multiplier,
+		"automation_speed_multiplier": automation_speed_multiplier,
 		"intern_fatigue": intern_fatigue,
 		"intern_efficiency": intern_efficiency,
 		"cheer_buff_stacks": _cheer_buff_stacks,
 		"cheer_buff_remaining_sec": get_cheer_buff_remaining(),
 		"interns_hired": interns_hired,
 		"current_stage": current_stage,
+		"purchased_upgrades": _purchased_upgrade_ids_for_save(),
 	}
+
+
+func _purchased_upgrade_ids_for_save() -> Array[String]:
+	var ids: Array[String] = []
+	for upgrade_id in _purchased_upgrades.keys():
+		ids.append(String(upgrade_id))
+	ids.sort()
+	return ids
 
 
 func _deserialize(data: Dictionary) -> void:
@@ -698,6 +776,16 @@ func _deserialize(data: Dictionary) -> void:
 	metaverse_shares = maxf(float(data.get("metaverse_shares", 0.0)), 0.0)
 	production_multiplier = maxf(float(data.get("production_multiplier", 1.0)), 0.0)
 	click_multiplier = maxf(float(data.get("click_multiplier", 1.0)), 0.0)
+	automation_speed_multiplier = maxf(
+		float(data.get("automation_speed_multiplier", 1.0)), 0.01
+	)
+	_purchased_upgrades.clear()
+	var stored_upgrades: Variant = data.get("purchased_upgrades", [])
+	if stored_upgrades is Array:
+		for raw_id in stored_upgrades:
+			var upgrade_id := StringName(str(raw_id))
+			if not upgrade_id.is_empty():
+				_purchased_upgrades[upgrade_id] = true
 	intern_fatigue = clampf(float(data.get("intern_fatigue", 0.0)), 0.0, FATIGUE_MAX)
 	intern_efficiency = get_efficiency_for_fatigue(intern_fatigue)
 	_cheer_buff_stacks = 0
@@ -749,6 +837,8 @@ func reset_state() -> void:
 	metaverse_shares = 0.0
 	production_multiplier = 1.0
 	click_multiplier = 1.0
+	automation_speed_multiplier = 1.0
+	_purchased_upgrades.clear()
 	intern_fatigue = 0.0
 	intern_efficiency = 1.0
 	_cheer_buff_stacks = 0
@@ -774,6 +864,7 @@ func _emit_all_changes() -> void:
 	_emit_metaverse_shares_changed()
 	SignalBus.production_multiplier_changed.emit(production_multiplier)
 	SignalBus.click_multiplier_changed.emit(click_multiplier)
+	SignalBus.automation_speed_changed.emit(automation_speed_multiplier)
 	SignalBus.fatigue_changed.emit(intern_fatigue)
 	SignalBus.intern_efficiency_changed.emit(intern_efficiency)
 	_last_recovery_rate = get_natural_recovery_rate()
@@ -784,4 +875,5 @@ func _emit_all_changes() -> void:
 	)
 	SignalBus.intern_hire_state_changed.emit(interns_hired, get_intern_hire_cost())
 	SignalBus.scale_changed.emit(current_stage)
+	SignalBus.upgrade_tree_changed.emit()
 	_emit_hr_registry_if_changed()

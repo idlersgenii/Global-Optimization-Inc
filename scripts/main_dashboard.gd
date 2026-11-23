@@ -93,6 +93,7 @@ func _connect_signals() -> void:
 	SignalBus.pure_logic_changed.connect(_on_balance_changed)
 	SignalBus.production_multiplier_changed.connect(_on_multiplier_changed)
 	SignalBus.click_multiplier_changed.connect(_on_multiplier_changed)
+	SignalBus.automation_speed_changed.connect(_on_automation_speed_changed)
 	SignalBus.intern_efficiency_changed.connect(_on_multiplier_changed)
 	SignalBus.intern_exhausted.connect(_on_intern_exhausted)
 	SignalBus.intern_cheered.connect(_on_intern_cheered)
@@ -298,6 +299,10 @@ func _on_multiplier_changed(_new_multiplier: float) -> void:
 	_refresh_all()
 
 
+func _on_automation_speed_changed(_new_multiplier: float) -> void:
+	_refresh_intern_hire_state()
+
+
 func _on_intern_exhausted() -> void:
 	var percent := int(roundf(GameState.intern_efficiency * 100.0))
 	_set_status("АЛЕКСЕЙ ПЕРЕУТОМЛЁН: ЭФФЕКТИВНОСТЬ %d%%" % percent)
@@ -329,7 +334,7 @@ func _on_natural_recovery_changed(rate: float, active: bool) -> void:
 func _refresh_intern_hire_state() -> void:
 	var interns := GameState.interns_hired
 	var cost := GameState.get_intern_hire_cost()
-	var interval := String.num(InternManager.INTERN_AUTO_CLICK_INTERVAL_SEC, 1)
+	var interval := String.num(InternManager.get_automation_interval(), 1)
 	var growth_percent := int(roundf((GameState.INTERN_COST_GROWTH - 1.0) * 100.0))
 
 	_intern_state_label.text = (
@@ -363,7 +368,7 @@ func _refresh_intern_hire_state() -> void:
 
 	if interns == 0:
 		_intern_countdown_label.text = "АВТОКЛИК ВЫКЛЮЧЕН"
-		_intern_progress.max_value = InternManager.INTERN_AUTO_CLICK_INTERVAL_SEC
+		_intern_progress.max_value = InternManager.get_automation_interval()
 		_intern_progress.value = 0.0
 
 
@@ -396,7 +401,7 @@ func _on_employee_hired(employee_id: StringName) -> void:
 		return
 
 	var count := GameState.interns_hired
-	var interval := String.num(InternManager.INTERN_AUTO_CLICK_INTERVAL_SEC, 1)
+	var interval := String.num(InternManager.get_automation_interval(), 1)
 	if count <= 1:
 		_set_status("СТАЖЁР АЛЕКСЕЙ НАНЯТ: АВТОПОМОЛ КАЖДЫЕ %s С" % interval)
 		_log_event("HR: СТАЖЁР АЛЕКСЕЙ ОФОРМЛЕН. РУЧНОЙ ТРУД ОПТИМИЗИРОВАН.")

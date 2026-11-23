@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/upgrade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/icons/upgrade_radiation.tres" id="2_icon"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"uranium_chairs"
+title = "Эргономичные стулья из зоны отчуждения"
+description = "Сиденья из радиоактивного свинца слегка фонят, но заставляют сотрудников сидеть ровно и не отвлекаться на перекуры из-за боязни мутаций."
+effect_text = "Скорость работы стажёров +15%. Жалобы в профсоюз −100%."
+icon = ExtResource("2_icon")
+coffee_cost = 60.0
+automation_speed_factor = 1.15

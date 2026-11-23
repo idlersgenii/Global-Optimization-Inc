@@ -54,6 +54,8 @@ signal production_rate_changed(cups_per_second: float)
 signal click_power_changed(new_power: float)
 signal production_multiplier_changed(new_multiplier: float)
 signal click_multiplier_changed(new_multiplier: float)
+## Multiplier applied to hired-intern work speed (1.0 = base interval).
+signal automation_speed_changed(new_multiplier: float)
 signal fatigue_changed(new_value: float)
 signal intern_efficiency_changed(new_efficiency: float)
 signal intern_exhausted()
